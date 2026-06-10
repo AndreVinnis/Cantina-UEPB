@@ -1,0 +1,118 @@
+# ============================================================
+# GERAL
+# ============================================================
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistemas operacionais
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.iml
+.project
+.classpath
+.settings/
+
+# ============================================================
+# BACKEND — Java 21
+# ============================================================
+
+# Bytecode e empacotados
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# Diretórios de build
+target/
+build/
+out/
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Gradle (caso venha a usar)
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Spring Boot
+spring-shell.log
+
+# Relatórios de testes
+**/surefire-reports/
+**/failsafe-reports/
+
+# ============================================================
+# FRONTEND — Angular + Tailwind
+# ============================================================
+
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build Angular
+dist/
+.angular/cache/
+
+# Cache e ferramentas
+.cache/
+.eslintcache
+.stylelintcache
+
+# Testes e cobertura
+coverage/
+.nyc_output/
+
+# Angular CLI
+.angular/
+
+# ============================================================
+# DOCKER
+# ============================================================
+docker-compose.override.yml
+
+# ============================================================
+# MISC
+# ============================================================
+*.bak
+*.tmp
+*.temp
+*.swp
+tmp/
+temp/
