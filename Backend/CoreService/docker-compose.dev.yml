@@ -1,0 +1,37 @@
+services:
+
+  mysql-core:
+    image: mysql:8.0
+    container_name: mysql-core-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: senha
+      MYSQL_DATABASE: core_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-core-dev-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  core-service:
+    build: .
+    container_name: core-service-dev
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-core:3306/core_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: senha
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      JWT_SECRET: segredo-dev-qualquer-coisa
+      JWT_EXPIRATION_MS: 86400000
+      EUREKA_URL: http://localhost:8761/eureka
+    depends_on:
+      mysql-core:
+        condition: service_healthy
+
+volumes:
+  mysql-core-dev-data:
