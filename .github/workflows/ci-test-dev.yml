@@ -1,0 +1,92 @@
+name: CI - Testes por Serviço
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+      - 'refactor/**'
+      - 'hotfix/**'
+      - 'chore/**'
+      - 'docs/**'
+      - 'test/**'
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  detect-changes:
+    name: Detectar serviços alterados
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.detect.outputs.services }}
+      has_changes: ${{ steps.detect.outputs.has_changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detectar serviços com alterações
+        id: detect
+        run: |
+          # Pega os arquivos alterados em relação à main
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+
+          echo "Arquivos alterados:"
+          echo "$CHANGED_FILES"
+
+          # Extrai os nomes das pastas de serviços alteradas dentro de services/
+          SERVICES=$(echo "$CHANGED_FILES" \
+            | grep '^services/' \
+            | cut -d'/' -f2 \
+            | sort -u \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          echo "Serviços detectados: $SERVICES"
+
+          if [ "$SERVICES" = "[]" ] || [ -z "$SERVICES" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "services=[]" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "services=$SERVICES" >> $GITHUB_OUTPUT
+          fi
+
+  run-tests:
+    name: Testes - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Executar testes com cobertura - ${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
+        run: mvn verify -Pcoverage --no-transfer-progress
+
+      - name: Upload relatório Jacoco - ${{ matrix.service }}
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-${{ matrix.service }}
+          path: services/${{ matrix.service }}/target/site/jacoco/
+          retention-days: 7
