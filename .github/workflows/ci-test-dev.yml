@@ -41,9 +41,9 @@ jobs:
           echo "Arquivos alterados:"
           echo "$CHANGED_FILES"
 
-          # Extrai os nomes das pastas de serviços alteradas dentro de services/
+          # Extrai os nomes das pastas de serviços alteradas dentro de Backend/
           SERVICES=$(echo "$CHANGED_FILES" \
-            | grep '^services/' \
+            | grep '^Backend/' \
             | cut -d'/' -f2 \
             | sort -u \
             | jq -R -s -c 'split("\n") | map(select(length > 0))')
@@ -80,7 +80,7 @@ jobs:
           cache: maven
 
       - name: Executar testes com cobertura - ${{ matrix.service }}
-        working-directory: services/${{ matrix.service }}
+        working-directory: Backend/${{ matrix.service }}
         run: mvn verify -Pcoverage --no-transfer-progress
 
       - name: Upload relatório Jacoco - ${{ matrix.service }}
@@ -88,5 +88,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-${{ matrix.service }}
-          path: services/${{ matrix.service }}/target/site/jacoco/
+          path: Backend/${{ matrix.service }}/target/site/jacoco/
           retention-days: 7
