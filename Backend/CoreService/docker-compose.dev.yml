@@ -17,17 +17,23 @@ services:
       retries: 5
 
   core-service:
-    build: .
+    image: eclipse-temurin:21-jdk-alpine
     container_name: core-service-dev
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ~/.m2:/root/.m2
+    command: ./mvnw spring-boot:run
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-core:3306/core_db
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-core:3306/core_db?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: senha
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-      JWT_SECRET: segredo-dev-qualquer-coisa
-      JWT_EXPIRATION_MS: 86400000
+      JWT_SECRET: zdtlD3G/O/9n8u0K1XyBwH2zYjL+mRQ5aV5Z+B4TqP0=
+      JWT_EXPIRATION_MS: 1440
       EUREKA_URL: http://localhost:8761/eureka
     depends_on:
       mysql-core:
