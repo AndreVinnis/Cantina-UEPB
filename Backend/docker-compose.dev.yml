@@ -1,0 +1,10 @@
+name: ecossistema-cantina-uebp
+
+include:
+  - EurekaServer/docker-compose.yml
+  - CoreService/docker-compose.dev.yml
+
+
+networks:
+  rede-microsservicos:
+    driver: bridge
