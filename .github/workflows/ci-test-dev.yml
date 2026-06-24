@@ -41,21 +41,27 @@ jobs:
           echo "Arquivos alterados:"
           echo "$CHANGED_FILES"
 
-          # Extrai os nomes das pastas de serviços alteradas dentro de Backend/
-          SERVICES=$(echo "$CHANGED_FILES" \
-            | grep '^Backend/' \
-            | cut -d'/' -f2 \
-            | sort -u \
-            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Extrai os nomes do segundo nível (dentro de Backend/)
+          POTENTIAL_SERVICES=$(echo "$CHANGED_FILES" | grep '^Backend/' | cut -d'/' -f2 | sort -u)
 
-          echo "Serviços detectados: $SERVICES"
+          VALID_SERVICES=()
+          for SERVICE in $POTENTIAL_SERVICES; do
+            # Verifica se é um diretório E se contém um pom.xml (Ignora arquivos como docker-compose.yml ou README.md)
+            if [ -d "Backend/$SERVICE" ] && [ -f "Backend/$SERVICE/pom.xml" ]; then
+              VALID_SERVICES+=("$SERVICE")
+            fi
+          done
 
-          if [ "$SERVICES" = "[]" ] || [ -z "$SERVICES" ]; then
+          echo "Serviços válidos detectados: ${VALID_SERVICES[@]}"
+
+          # Valida e converte o array bash para JSON array
+          if [ ${#VALID_SERVICES[@]} -eq 0 ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "services=[]" >> $GITHUB_OUTPUT
           else
+            SERVICES_JSON=$(printf '%s\n' "${VALID_SERVICES[@]}" | jq -R -s -c 'split("\n") | map(select(length > 0))')
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "services=$SERVICES" >> $GITHUB_OUTPUT
+            echo "services=$SERVICES_JSON" >> $GITHUB_OUTPUT
           fi
 
   run-tests:
