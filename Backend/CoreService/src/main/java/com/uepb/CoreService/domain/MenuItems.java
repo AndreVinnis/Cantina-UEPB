@@ -18,7 +18,7 @@ import java.time.Instant;
 public class MenuItems {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     @ManyToOne(optional = false)

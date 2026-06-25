@@ -6,6 +6,8 @@ import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
 import com.uepb.CoreService.exceptions.ShortPasswordException;
 import com.uepb.CoreService.repository.CafeteriaRepository;
+import com.uepb.CoreService.utils.StorageImageService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,14 +17,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.multipart.MultipartFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
 @ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 class CafeteriaServiceTest {
@@ -33,17 +36,41 @@ class CafeteriaServiceTest {
     @Mock
     private PasswordEncoder encoder;
 
+    @Mock
+    private StorageImageService imageService;
+
     @InjectMocks
     private CafeteriaService cafeteriaService;
 
     @Captor
     private ArgumentCaptor<Cafeteria> cafeteriaCaptor;
 
+    private Cafeteria cafeteria;
+    private CafeteriaRequest request;
+    private MockMultipartFile mockFile;
+
+    @BeforeEach
+    void setUp() {
+        cafeteria = new Cafeteria();
+        cafeteria.setId("123");
+        cafeteria.setName("Cantina Central");
+        cafeteria.setImageUrl(null);
+
+        request = new CafeteriaRequest("Central Perk",
+                "contato@centralperk.com", "senhaForte123");
+
+        mockFile = new MockMultipartFile(
+                "file",
+                "logo.png",
+                "image/png",
+                "conteudo da imagem".getBytes()
+        );
+    }
+
     @Test
     @DisplayName("Deve criar uma cafeteria com sucesso quando os dados forem válidos")
     void createCafeteria_Success() {
         // Arrange
-        CafeteriaRequest request = new CafeteriaRequest("Central Perk", "contato@centralperk.com", "senhaForte123");
         Cafeteria savedCafeteria = Cafeteria.builder()
                 .name(request.name())
                 .email(request.email())
@@ -80,7 +107,6 @@ class CafeteriaServiceTest {
     @DisplayName("Deve lançar EmailAlreadyExistException quando o e-mail já estiver em uso")
     void createCafeteria_ThrowsEmailAlreadyExistException() {
         // Arrange
-        CafeteriaRequest request = new CafeteriaRequest("Central Perk", "contato@centralperk.com", "senhaForte123");
         Cafeteria existingCafeteria = Cafeteria.builder().email("contato@centralperk.com").build();
 
         when(cafeteriaRepository.findByEmail(request.email())).thenReturn(existingCafeteria);
@@ -114,7 +140,7 @@ class CafeteriaServiceTest {
     @DisplayName("Deve lançar ShortPasswordException quando a senha tiver menos de 8 caracteres")
     void createCafeteria_ThrowsShortPasswordException() {
         // Arrange
-        CafeteriaRequest request = new CafeteriaRequest("Central Perk", "contato@centralperk.com", "1234567"); // 7 caracteres
+        CafeteriaRequest request = new CafeteriaRequest("Central Perk", "contato@centralperk.com", "1234567");
 
         when(cafeteriaRepository.findByEmail(request.email())).thenReturn(null);
 
@@ -122,6 +148,51 @@ class CafeteriaServiceTest {
         assertThrows(ShortPasswordException.class, () -> cafeteriaService.createCafeteria(request));
 
         verify(encoder, never()).encode(anyString());
+        verify(cafeteriaRepository, never()).save(any(Cafeteria.class));
+    }
+
+    @Test
+    @DisplayName("Deve salvar a imagem com sucesso, atualizar a entidade e retornar o caminho")
+    void deveSalvarImagemComSucesso() {
+        // Arrange (Configuração do cenário)
+        String caminhoEsperado = "/imagens/cafeterias/Cantina Central-123.png";
+
+        // Simula o comportamento do serviço de armazenamento
+        when(imageService.saveImage(any(MultipartFile.class), eq("cafeterias/"), eq("123"), eq("Cantina Central")))
+                .thenReturn(caminhoEsperado);
+
+        // Simula o salvamento no banco retornando a própria cafeteria
+        when(cafeteriaRepository.save(any(Cafeteria.class))).thenReturn(cafeteria);
+
+        // Act (Execução da ação)
+        String resultadoCaminho = cafeteriaService.saveImage(cafeteria, mockFile);
+
+        // Assert (Verificações e Validações)
+        assertNotNull(resultadoCaminho);
+        assertEquals(caminhoEsperado, resultadoCaminho);
+        assertEquals(caminhoEsperado, cafeteria.getImageUrl(), "O objeto cafeteria deveria estar com a URL atualizada");
+
+        // Verifica se os mocks foram acionados exatamente 1 vez com os parâmetros corretos
+        verify(imageService, times(1)).saveImage(mockFile, "cafeterias/", "123", "Cantina Central");
+        verify(cafeteriaRepository, times(1)).save(cafeteria);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção e não salvar no banco se o StorageImageService falhar")
+    void deveLancatExcecaoQuandoStorageFalhar() {
+        // Arrange
+        when(imageService.saveImage(any(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("Erro ao salvar a imagem"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            cafeteriaService.saveImage(cafeteria, mockFile);
+        });
+
+        assertEquals("Erro ao salvar a imagem", exception.getMessage());
+
+        // Garantia arquitetural: Se o arquivo falhou, o banco NÃO pode ser atualizado com uma URL inválida
+        assertNull(cafeteria.getImageUrl());
         verify(cafeteriaRepository, never()).save(any(Cafeteria.class));
     }
 }

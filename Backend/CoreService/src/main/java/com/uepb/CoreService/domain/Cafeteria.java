@@ -49,6 +49,8 @@ public class Cafeteria implements UserDetails {
     @Builder.Default
     private List<MenuItems> menuItems = new ArrayList<>();
 
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
