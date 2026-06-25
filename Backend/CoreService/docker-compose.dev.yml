@@ -25,6 +25,7 @@ services:
     volumes:
       - ./:/app
       - ~/.m2:/root/.m2
+      - ./uploads-host/imagens:/dados/imagens/
     command: ./mvnw spring-boot:run
     ports:
       - "8080:8080"
@@ -37,6 +38,7 @@ services:
       JWT_SECRET: zdtlD3G/O/9n8u0K1XyBwH2zYjL+mRQ5aV5Z+B4TqP0=
       JWT_EXPIRATION_MS: 1440
       EUREKA_URL: http://eureka-server:8761/eureka/
+      APP_DIRETORIO_RAIZ-IMAGENS: /dados/imagens/
     depends_on:
       mysql-core:
         condition: service_healthy
