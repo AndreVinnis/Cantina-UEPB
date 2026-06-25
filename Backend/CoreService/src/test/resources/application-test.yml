@@ -13,5 +13,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
+app:
+  diretorio:
+    imagens: /tmp/test-imagens/
+
 JWT_SECRET: "umachavefalsabemgrandeparaostestesrodaremcomsucesso"
 JWT_EXPIRATION_MS: 1440
