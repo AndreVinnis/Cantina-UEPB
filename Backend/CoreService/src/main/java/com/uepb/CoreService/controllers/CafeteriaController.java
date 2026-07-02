@@ -2,8 +2,8 @@ package com.uepb.CoreService.controllers;
 
 import com.uepb.CoreService.config.JwtService;
 import com.uepb.CoreService.domain.Cafeteria;
-import com.uepb.CoreService.dto.AuthResponse;
-import com.uepb.CoreService.dto.CafeteriaRequest;
+import com.uepb.CoreService.dto.response.AuthResponse;
+import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.services.CafeteriaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ public class CafeteriaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(token));
     }
 
-    @PostMapping(value = "/my/imagem", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadImagem(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam("image") MultipartFile image) {

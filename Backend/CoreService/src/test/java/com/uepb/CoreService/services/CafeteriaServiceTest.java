@@ -1,7 +1,7 @@
 package com.uepb.CoreService.services;
 
 import com.uepb.CoreService.domain.Cafeteria;
-import com.uepb.CoreService.dto.CafeteriaRequest;
+import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
 import com.uepb.CoreService.exceptions.ShortPasswordException;
@@ -16,7 +16,6 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;

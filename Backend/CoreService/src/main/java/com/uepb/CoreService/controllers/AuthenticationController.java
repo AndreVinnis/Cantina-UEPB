@@ -2,8 +2,8 @@ package com.uepb.CoreService.controllers;
 
 import com.uepb.CoreService.config.JwtService;
 import com.uepb.CoreService.domain.Cafeteria;
-import com.uepb.CoreService.dto.AuthRequest;
-import com.uepb.CoreService.dto.AuthResponse;
+import com.uepb.CoreService.dto.request.AuthRequest;
+import com.uepb.CoreService.dto.response.AuthResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
