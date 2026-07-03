@@ -15,7 +15,7 @@ import java.time.Instant;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class MenuItems {
+public class MenuItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -45,6 +45,8 @@ public class MenuItems {
     @Enumerated(EnumType.STRING)
     @Column(name = "availability_mode", nullable = false)
     private AvailabilityMode availabilityMode;
+
+    private String imageUrl;
 
     private Integer stock;
 

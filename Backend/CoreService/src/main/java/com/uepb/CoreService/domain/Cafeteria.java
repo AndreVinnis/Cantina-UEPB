@@ -2,7 +2,6 @@ package com.uepb.CoreService.domain;
 
 import com.uepb.CoreService.enums.UserRole;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -47,7 +46,7 @@ public class Cafeteria implements UserDetails {
 
     @OneToMany(mappedBy = "cafeteria", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<MenuItems> menuItems = new ArrayList<>();
+    private List<MenuItem> menuItems = new ArrayList<>();
 
     private String imageUrl;
 

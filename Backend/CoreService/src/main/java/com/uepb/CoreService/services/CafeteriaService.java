@@ -1,7 +1,7 @@
 package com.uepb.CoreService.services;
 
 import com.uepb.CoreService.domain.Cafeteria;
-import com.uepb.CoreService.dto.CafeteriaRequest;
+import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
 import com.uepb.CoreService.exceptions.ShortPasswordException;
@@ -14,13 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Service
@@ -37,9 +30,6 @@ public class CafeteriaService {
 
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
-
-    @Value("${app.diretorio.imagens}")
-    private String imageDirectory;
 
     @Transactional
     public Cafeteria createCafeteria(CafeteriaRequest newCafeteria){
