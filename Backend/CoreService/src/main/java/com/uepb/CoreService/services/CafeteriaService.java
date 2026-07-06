@@ -2,13 +2,14 @@ package com.uepb.CoreService.services;
 
 import com.uepb.CoreService.domain.Cafeteria;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
+import com.uepb.CoreService.dto.response.CafeteriaResponse;
 import com.uepb.CoreService.enums.UserRole;
+import com.uepb.CoreService.exceptions.CafeteriaNotFound;
 import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
 import com.uepb.CoreService.exceptions.ShortPasswordException;
 import com.uepb.CoreService.repository.CafeteriaRepository;
 import com.uepb.CoreService.utils.StorageImageService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +54,16 @@ public class CafeteriaService {
         return cafeteriaRepository.save(cafeteria);
     }
 
+    public CafeteriaResponse getMyCafeteria(String email){
+        Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
+
+        if(cafeteria == null){
+            throw new CafeteriaNotFound(email);
+        }
+
+        return toResponse(cafeteria);
+    }
+
     private boolean isValidEmail(String email) {
         if (email == null || email.isBlank()) {
             return false;
@@ -66,5 +77,14 @@ public class CafeteriaService {
         cafeteria.setImageUrl(imagePath);
         cafeteriaRepository.save(cafeteria);
         return imagePath;
+    }
+
+    private CafeteriaResponse toResponse(Cafeteria cafeteria){
+        return new CafeteriaResponse(
+                cafeteria.getName(),
+                cafeteria.getEmail(),
+                cafeteria.isActive(),
+                cafeteria.getImageUrl()
+        );
     }
 }
