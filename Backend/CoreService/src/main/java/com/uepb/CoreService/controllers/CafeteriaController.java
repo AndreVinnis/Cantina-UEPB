@@ -50,6 +50,12 @@ public class CafeteriaController {
         return ResponseEntity.ok(cafeteriaService.updateCafeteria(userDetails.getUsername(), newCafeteria));
     }
 
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteCafeteria(@AuthenticationPrincipal UserDetails userDetails){
+        cafeteriaService.delete(userDetails.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/my")
     public ResponseEntity<CafeteriaResponse> getMyCafeteria(@AuthenticationPrincipal UserDetails userDetails){
         return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()));

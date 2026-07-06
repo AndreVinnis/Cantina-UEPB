@@ -84,6 +84,16 @@ public class CafeteriaService {
         return toResponse(cafeteria);
     }
 
+    public void delete(String email){
+        Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
+
+        if(cafeteria == null){
+            throw new CafeteriaNotFound(email);
+        }
+
+        cafeteriaRepository.delete(cafeteria);
+    }
+
     private boolean isValidEmail(String email) {
         if (email == null || email.isBlank()) {
             return false;
