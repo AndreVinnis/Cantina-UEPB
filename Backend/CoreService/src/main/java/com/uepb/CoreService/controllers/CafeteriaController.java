@@ -4,6 +4,7 @@ import com.uepb.CoreService.config.JwtService;
 import com.uepb.CoreService.domain.Cafeteria;
 import com.uepb.CoreService.dto.response.AuthResponse;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
+import com.uepb.CoreService.dto.response.CafeteriaResponse;
 import com.uepb.CoreService.services.CafeteriaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,5 +40,24 @@ public class CafeteriaController {
 
         String urlImagem = cafeteriaService.saveImage((Cafeteria) userDetails, image);
         return ResponseEntity.ok(urlImagem);
+    }
+
+    @PatchMapping("/update")
+    public ResponseEntity<CafeteriaResponse> updateCafeteria(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody @Valid CafeteriaRequest newCafeteria
+    ){
+        return ResponseEntity.ok(cafeteriaService.updateCafeteria(userDetails.getUsername(), newCafeteria));
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteCafeteria(@AuthenticationPrincipal UserDetails userDetails){
+        cafeteriaService.delete(userDetails.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<CafeteriaResponse> getMyCafeteria(@AuthenticationPrincipal UserDetails userDetails){
+        return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()));
     }
 }
