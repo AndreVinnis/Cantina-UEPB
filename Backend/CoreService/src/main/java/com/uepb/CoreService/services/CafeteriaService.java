@@ -64,6 +64,26 @@ public class CafeteriaService {
         return toResponse(cafeteria);
     }
 
+    public CafeteriaResponse updateCafeteria(String email, CafeteriaRequest newCafeteria){
+        Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
+
+        if(cafeteria == null){
+            throw new CafeteriaNotFound(email);
+        }
+
+        if(newCafeteria.name() != null){
+            cafeteria.setName(newCafeteria.name());
+        }
+        if(newCafeteria.email() != null){
+            cafeteria.setEmail(newCafeteria.email());
+        }
+        if(newCafeteria.password() != null){
+            cafeteria.setHashPassword(encoder.encode(newCafeteria.password()));
+        }
+        cafeteria = cafeteriaRepository.save(cafeteria);
+        return toResponse(cafeteria);
+    }
+
     private boolean isValidEmail(String email) {
         if (email == null || email.isBlank()) {
             return false;

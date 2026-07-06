@@ -42,6 +42,14 @@ public class CafeteriaController {
         return ResponseEntity.ok(urlImagem);
     }
 
+    @PatchMapping("/update")
+    public ResponseEntity<CafeteriaResponse> updateCafeteria(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody @Valid CafeteriaRequest newCafeteria
+    ){
+        return ResponseEntity.ok(cafeteriaService.updateCafeteria(userDetails.getUsername(), newCafeteria));
+    }
+
     @GetMapping("/my")
     public ResponseEntity<CafeteriaResponse> getMyCafeteria(@AuthenticationPrincipal UserDetails userDetails){
         return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()));
