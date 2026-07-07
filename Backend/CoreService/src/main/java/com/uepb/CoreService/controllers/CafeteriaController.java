@@ -16,6 +16,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/cafeteria")
 public class CafeteriaController {
@@ -59,5 +61,10 @@ public class CafeteriaController {
     @GetMapping("/my")
     public ResponseEntity<CafeteriaResponse> getMyCafeteria(@AuthenticationPrincipal UserDetails userDetails){
         return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()));
+    }
+
+    @GetMapping("/public/all")
+    public ResponseEntity<List<CafeteriaResponse>> getAllCafeterias(){
+        return ResponseEntity.ok(cafeteriaService.getAllCafeterias());
     }
 }

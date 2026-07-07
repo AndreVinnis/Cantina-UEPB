@@ -6,6 +6,7 @@ import com.uepb.CoreService.dto.response.CafeteriaResponse;
 import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.CafeteriaNotFound;
 import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
+import com.uepb.CoreService.exceptions.NoCafeteriaFound;
 import com.uepb.CoreService.exceptions.ShortPasswordException;
 import com.uepb.CoreService.repository.CafeteriaRepository;
 import com.uepb.CoreService.utils.StorageImageService;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -62,6 +65,19 @@ public class CafeteriaService {
         }
 
         return toResponse(cafeteria);
+    }
+
+    public List<CafeteriaResponse> getAllCafeterias(){
+        List<Cafeteria> cafeterias = cafeteriaRepository.findAll();
+        if(cafeterias.isEmpty()){
+            throw new NoCafeteriaFound();
+        }
+
+        List<CafeteriaResponse> cafeteriasResponses = new ArrayList<>();
+        for(Cafeteria cafeteria: cafeterias){
+            cafeteriasResponses.add(toResponse(cafeteria));
+        }
+        return cafeteriasResponses;
     }
 
     public CafeteriaResponse updateCafeteria(String email, CafeteriaRequest newCafeteria){
