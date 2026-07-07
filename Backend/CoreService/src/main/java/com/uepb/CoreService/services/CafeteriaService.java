@@ -4,10 +4,7 @@ import com.uepb.CoreService.domain.Cafeteria;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
 import com.uepb.CoreService.enums.UserRole;
-import com.uepb.CoreService.exceptions.CafeteriaNotFound;
-import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
-import com.uepb.CoreService.exceptions.NoCafeteriaFound;
-import com.uepb.CoreService.exceptions.ShortPasswordException;
+import com.uepb.CoreService.exceptions.*;
 import com.uepb.CoreService.repository.CafeteriaRepository;
 import com.uepb.CoreService.utils.StorageImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,11 +43,18 @@ public class CafeteriaService {
         if(newCafeteria.password().length() < 8){
             throw new ShortPasswordException();
         }
+        List<Cafeteria> cafeterias = cafeteriaRepository.findByCampus(newCafeteria.campus());
+        for(Cafeteria cafeteria : cafeterias){
+            if(cafeteria.getName().equals(newCafeteria.name())){
+                throw new NameAlreadyExist(newCafeteria.name());
+            }
+        }
 
         Cafeteria cafeteria = Cafeteria.builder()
                 .name(newCafeteria.name())
                 .email(newCafeteria.email())
                 .hashPassword(encoder.encode(newCafeteria.password()))
+                .campus(newCafeteria.campus())
                 .role(UserRole.USER)
                 .build();
 

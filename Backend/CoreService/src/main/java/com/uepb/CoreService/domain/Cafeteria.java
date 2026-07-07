@@ -1,5 +1,6 @@
 package com.uepb.CoreService.domain;
 
+import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -49,6 +50,9 @@ public class Cafeteria implements UserDetails {
     private List<MenuItem> menuItems = new ArrayList<>();
 
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    private Campus campus;
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
