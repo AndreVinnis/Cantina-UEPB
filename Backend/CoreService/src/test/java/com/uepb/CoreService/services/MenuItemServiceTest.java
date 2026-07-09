@@ -9,6 +9,7 @@ import com.uepb.CoreService.enums.Category;
 import com.uepb.CoreService.exceptions.CafeteriaIsNotActive;
 import com.uepb.CoreService.exceptions.MenuItemAlreadyExists;
 import com.uepb.CoreService.exceptions.MenuItemNotFound;
+import com.uepb.CoreService.exceptions.NoMenuItemsYet;
 import com.uepb.CoreService.repository.MenuItemRepository;
 import com.uepb.CoreService.utils.StorageImageService;
 import org.junit.jupiter.api.BeforeEach;
@@ -225,5 +226,49 @@ class MenuItemServiceTest {
         // Garantia arquitetural de que o "item" não foi atualizado no banco com URL inválida
         assertNull(menuItem.getImageUrl());
         verify(menuItemsRepository, never()).save(any(MenuItem.class));
+    }
+
+    // --- TESTES PARA getMenuItemsForCafeteria ---
+
+    @Test
+    @DisplayName("Deve retornar apenas os itens que estão disponíveis da cafeteria")
+    void getMenuItemsForCafeteria_Success() {
+        // Arrange
+        MenuItem availableItem = MenuItem.builder()
+                .id("item-1")
+                .cafeteria(activeCafeteria)
+                .name("Coxinha")
+                .availability(true)
+                .build();
+
+        MenuItem unavailableItem = MenuItem.builder()
+                .id("item-2")
+                .cafeteria(activeCafeteria)
+                .name("Bolo")
+                .availability(false)
+                .build();
+
+        when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId()))
+                .thenReturn(List.of(availableItem, unavailableItem));
+
+        // Act
+        List<MenuItemResponse> result = menuItemService.getMenuItemsForCafeteria(activeCafeteria.getId());
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size(), "Deve retornar apenas 1 item (o disponível)");
+        assertEquals("Coxinha", result.get(0).name());
+        verify(menuItemsRepository, times(1)).findByCafeteriaId(activeCafeteria.getId());
+    }
+
+    @Test
+    @DisplayName("Deve lançar NoMenuItemsYet quando a cafeteria não possuir nenhum item cadastrado")
+    void getMenuItemsForCafeteria_ThrowsNoMenuItemsYet() {
+        // Arrange
+        when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId())).thenReturn(Collections.emptyList());
+
+        // Act & Assert
+        assertThrows(NoMenuItemsYet.class, () -> menuItemService.getMenuItemsForCafeteria(activeCafeteria.getId()));
+        verify(menuItemsRepository, times(1)).findByCafeteriaId(activeCafeteria.getId());
     }
 }
