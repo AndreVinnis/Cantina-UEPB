@@ -7,6 +7,7 @@ import com.uepb.CoreService.dto.response.MenuItemResponse;
 import com.uepb.CoreService.exceptions.CafeteriaIsNotActive;
 import com.uepb.CoreService.exceptions.MenuItemAlreadyExists;
 import com.uepb.CoreService.exceptions.MenuItemNotFound;
+import com.uepb.CoreService.exceptions.NoMenuItemsYet;
 import com.uepb.CoreService.repository.MenuItemRepository;
 import com.uepb.CoreService.utils.StorageImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -50,17 +52,7 @@ public class MenuItemService {
                 .build();
 
         menuItemsRepository.save(menuItem);
-        return new MenuItemResponse(
-                menuItem.getCafeteria().getId(),
-                menuItem.getName(),
-                menuItem.getDescription(),
-                menuItem.getPrice(),
-                menuItem.isAvailability(),
-                menuItem.getCategory(),
-                menuItem.getAvailabilityMode(),
-                menuItem.getStock(),
-                menuItem.getCreatedAt()
-        );
+        return toResponse(menuItem);
     }
 
     public String saveImage(Cafeteria cafeteria, String name, MultipartFile file) {
@@ -72,5 +64,31 @@ public class MenuItemService {
         item.setImageUrl(imagePath);
         menuItemsRepository.save(item);
         return imagePath;
+    }
+
+    public List<MenuItemResponse> getMenuItemsForCafeteria(String cafeteriaId){
+        List<MenuItem> menu = menuItemsRepository.findByCafeteriaId(cafeteriaId);
+        if(menu.isEmpty()){
+            throw new NoMenuItemsYet();
+        }
+
+        List<MenuItemResponse> menuResponse = new ArrayList<>();
+        for(MenuItem menuItem : menu){
+            if(menuItem.isAvailability()){
+                menuResponse.add(toResponse(menuItem));
+            }
+        }
+        return menuResponse;
+    }
+
+    private MenuItemResponse toResponse(MenuItem menuItem){
+        return new MenuItemResponse(
+                menuItem.getCafeteria().getName(),
+                menuItem.getName(),
+                menuItem.getDescription(),
+                menuItem.getPrice(),
+                menuItem.getCategory(),
+                menuItem.getStock()
+        );
     }
 }

@@ -3,10 +3,10 @@ package com.uepb.CoreService.services;
 import com.uepb.CoreService.domain.Cafeteria;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
+import com.uepb.CoreService.dto.response.MenuItemResponse;
+import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.enums.UserRole;
-import com.uepb.CoreService.exceptions.CafeteriaNotFound;
-import com.uepb.CoreService.exceptions.EmailAlreadyExistException;
-import com.uepb.CoreService.exceptions.ShortPasswordException;
+import com.uepb.CoreService.exceptions.*;
 import com.uepb.CoreService.repository.CafeteriaRepository;
 import com.uepb.CoreService.utils.StorageImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -22,6 +24,9 @@ public class CafeteriaService {
 
     @Autowired
     private CafeteriaRepository cafeteriaRepository;
+
+    @Autowired
+    private MenuItemService menuItemService;
 
     @Autowired
     private PasswordEncoder encoder;
@@ -43,11 +48,18 @@ public class CafeteriaService {
         if(newCafeteria.password().length() < 8){
             throw new ShortPasswordException();
         }
+        List<Cafeteria> cafeterias = cafeteriaRepository.findByCampus(newCafeteria.campus());
+        for(Cafeteria cafeteria : cafeterias){
+            if(cafeteria.getName().equals(newCafeteria.name())){
+                throw new NameAlreadyExist(newCafeteria.name());
+            }
+        }
 
         Cafeteria cafeteria = Cafeteria.builder()
                 .name(newCafeteria.name())
                 .email(newCafeteria.email())
                 .hashPassword(encoder.encode(newCafeteria.password()))
+                .campus(newCafeteria.campus())
                 .role(UserRole.USER)
                 .build();
 
@@ -107,6 +119,27 @@ public class CafeteriaService {
         cafeteria.setImageUrl(imagePath);
         cafeteriaRepository.save(cafeteria);
         return imagePath;
+    }
+
+    public List<CafeteriaResponse> getCafeteriaByCampus(Campus campus){
+        List<Cafeteria> cafeterias = cafeteriaRepository.findByCampus(campus);
+        if(cafeterias.isEmpty()){
+            throw new NoCafeteriaFound();
+        }
+
+        List<CafeteriaResponse> cafeteriasResponses = new ArrayList<>();
+        for(Cafeteria cafeteria: cafeterias){
+            cafeteriasResponses.add(toResponse(cafeteria));
+        }
+        return cafeteriasResponses;
+    }
+
+    public List<MenuItemResponse> getItemsForCafeteria(String name, Campus campus){
+        Cafeteria cafeteria = cafeteriaRepository.findByNameAndCampus(name, campus).orElseThrow(
+                () -> new CafeteriaNotFound(name)
+        );
+
+        return menuItemService.getMenuItemsForCafeteria(cafeteria.getId());
     }
 
     private CafeteriaResponse toResponse(Cafeteria cafeteria){
