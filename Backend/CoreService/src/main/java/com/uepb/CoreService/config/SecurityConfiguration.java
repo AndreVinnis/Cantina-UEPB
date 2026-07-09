@@ -27,6 +27,7 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("*/public/**").permitAll()
                         .requestMatchers("/cafeteria/create").permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",

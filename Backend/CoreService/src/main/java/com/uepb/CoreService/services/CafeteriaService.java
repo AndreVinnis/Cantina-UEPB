@@ -3,6 +3,8 @@ package com.uepb.CoreService.services;
 import com.uepb.CoreService.domain.Cafeteria;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
+import com.uepb.CoreService.dto.response.MenuItemResponse;
+import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.*;
 import com.uepb.CoreService.repository.CafeteriaRepository;
@@ -22,6 +24,9 @@ public class CafeteriaService {
 
     @Autowired
     private CafeteriaRepository cafeteriaRepository;
+
+    @Autowired
+    private MenuItemService menuItemService;
 
     @Autowired
     private PasswordEncoder encoder;
@@ -71,19 +76,6 @@ public class CafeteriaService {
         return toResponse(cafeteria);
     }
 
-    public List<CafeteriaResponse> getAllCafeterias(){
-        List<Cafeteria> cafeterias = cafeteriaRepository.findAll();
-        if(cafeterias.isEmpty()){
-            throw new NoCafeteriaFound();
-        }
-
-        List<CafeteriaResponse> cafeteriasResponses = new ArrayList<>();
-        for(Cafeteria cafeteria: cafeterias){
-            cafeteriasResponses.add(toResponse(cafeteria));
-        }
-        return cafeteriasResponses;
-    }
-
     public CafeteriaResponse updateCafeteria(String email, CafeteriaRequest newCafeteria){
         Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
 
@@ -127,6 +119,27 @@ public class CafeteriaService {
         cafeteria.setImageUrl(imagePath);
         cafeteriaRepository.save(cafeteria);
         return imagePath;
+    }
+
+    public List<CafeteriaResponse> getCafeteriaByCampus(Campus campus){
+        List<Cafeteria> cafeterias = cafeteriaRepository.findByCampus(campus);
+        if(cafeterias.isEmpty()){
+            throw new NoCafeteriaFound();
+        }
+
+        List<CafeteriaResponse> cafeteriasResponses = new ArrayList<>();
+        for(Cafeteria cafeteria: cafeterias){
+            cafeteriasResponses.add(toResponse(cafeteria));
+        }
+        return cafeteriasResponses;
+    }
+
+    public List<MenuItemResponse> getItemsForCafeteria(String name, Campus campus){
+        Cafeteria cafeteria = cafeteriaRepository.findByNameAndCampus(name, campus).orElseThrow(
+                () -> new CafeteriaNotFound(name)
+        );
+
+        return menuItemService.getMenuItemsForCafeteria(cafeteria.getId());
     }
 
     private CafeteriaResponse toResponse(Cafeteria cafeteria){

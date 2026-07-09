@@ -5,7 +5,10 @@ import com.uepb.CoreService.domain.Cafeteria;
 import com.uepb.CoreService.dto.response.AuthResponse;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
+import com.uepb.CoreService.dto.response.MenuItemResponse;
+import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.services.CafeteriaService;
+import com.uepb.CoreService.services.MenuItemService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +26,7 @@ import java.util.List;
 public class CafeteriaController {
 
     @Autowired
-    CafeteriaService cafeteriaService;
+    private CafeteriaService cafeteriaService;
 
     @Autowired
     private JwtService jwtService;
@@ -58,13 +61,18 @@ public class CafeteriaController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/my")
+    @GetMapping("/me")
     public ResponseEntity<CafeteriaResponse> getMyCafeteria(@AuthenticationPrincipal UserDetails userDetails){
         return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()));
     }
 
-    @GetMapping("/public/all")
-    public ResponseEntity<List<CafeteriaResponse>> getAllCafeterias(){
-        return ResponseEntity.ok(cafeteriaService.getAllCafeterias());
+    @GetMapping("/public/{campus}/all")
+    public ResponseEntity<List<CafeteriaResponse>> getAllCafeterias(@PathVariable Campus campus){
+        return ResponseEntity.ok(cafeteriaService.getCafeteriaByCampus(campus));
+    }
+
+    @GetMapping("/public/{campus}/{name}")
+    public ResponseEntity<List<MenuItemResponse>> getItems(@PathVariable String name, @PathVariable Campus campus){
+        return ResponseEntity.ok(cafeteriaService.getItemsForCafeteria(name, campus));
     }
 }
