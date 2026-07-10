@@ -81,12 +81,16 @@ public class MenuItemService {
         return menuResponse;
     }
 
-    public List<MenuItem> getAllMyItems(Cafeteria cafeteria){
+    public List<MenuItemResponse> getAllMyItems(Cafeteria cafeteria){
         List<MenuItem> menu = menuItemsRepository.findByCafeteriaId(cafeteria.getId());
         if(menu.isEmpty()){
             throw new NoMenuItemsYet();
         }
-        return menu;
+        List<MenuItemResponse> menuResponse = new ArrayList<>();
+        for(MenuItem menuItem : menu){
+            menuResponse.add(toResponse(menuItem));
+        }
+        return menuResponse;
     }
 
     public MenuItemResponse addStock(Cafeteria cafeteria, String itemName, Integer quantity){
