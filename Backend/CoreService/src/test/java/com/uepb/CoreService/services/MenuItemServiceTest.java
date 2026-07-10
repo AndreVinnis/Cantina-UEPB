@@ -110,23 +110,18 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve criar um item no menu com sucesso quando a cafeteria estiver ativa e dados válidos")
     void createMenuItem_Success() {
-        // Arrange
         when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId())).thenReturn(Collections.emptyList());
         when(menuItemsRepository.save(any(MenuItem.class))).thenReturn(menuItem);
 
-        // Act
         MenuItemResponse result = menuItemService.createMenuItem(activeCafeteria, request);
 
-        // Assert
         assertNotNull(result);
         assertEquals("Coxinha", result.name());
         assertEquals(new BigDecimal("5.50"), result.price());
 
-        // Verifica se os métodos foram chamados corretamente
         verify(menuItemsRepository, times(1)).findByCafeteriaId(activeCafeteria.getId());
         verify(menuItemsRepository, times(1)).save(menuItemCaptor.capture());
 
-        // Verifica a montagem do objeto salvo
         MenuItem capturedItem = menuItemCaptor.getValue();
         assertEquals("Coxinha", capturedItem.getName());
         assertEquals(Category.SNACK, capturedItem.getCategory());
@@ -137,10 +132,8 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve lançar CafeteriaIsNotActive quando tentar criar item em cafeteria inativa")
     void createMenuItem_ThrowsCafeteriaIsNotActive() {
-        // Act & Assert
         assertThrows(CafeteriaIsNotActive.class, () -> menuItemService.createMenuItem(inactiveCafeteria, request));
 
-        // Verifica que o banco de dados não foi tocado
         verify(menuItemsRepository, never()).findByCafeteriaId(anyString());
         verify(menuItemsRepository, never()).save(any(MenuItem.class));
     }
@@ -148,14 +141,11 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve lançar MenuItemAlreadyExists quando tentar criar item com nome já existente na mesma cafeteria")
     void createMenuItem_ThrowsMenuItemAlreadyExists() {
-        // Arrange
         MenuItem existingItem = MenuItem.builder().name("Coxinha").build();
         when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId())).thenReturn(List.of(existingItem));
 
-        // Act & Assert
         assertThrows(MenuItemAlreadyExists.class, () -> menuItemService.createMenuItem(activeCafeteria, request));
 
-        // Verifica que não chegou a salvar no banco
         verify(menuItemsRepository, never()).save(any(MenuItem.class));
     }
 
@@ -164,7 +154,6 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve salvar a imagem com sucesso, atualizar a entidade do item e retornar o caminho")
     void saveImage_Success() {
-        // Arrange
         String subfolderEsperada = "items-Cantina Central/";
         String caminhoEsperado = "/imagens/items/Coxinha-item-123.png";
 
@@ -174,10 +163,8 @@ class MenuItemServiceTest {
         when(imageService.saveImage(any(MultipartFile.class), eq(subfolderEsperada), eq("item-123"), eq("Coxinha")))
                 .thenReturn(caminhoEsperado);
 
-        // Act
         String resultadoCaminho = menuItemService.saveImage(activeCafeteria, "Coxinha", mockFile);
 
-        // Assert
         assertNotNull(resultadoCaminho);
         assertEquals(caminhoEsperado, resultadoCaminho);
         assertEquals(caminhoEsperado, menuItem.getImageUrl(), "O objeto MenuItem deveria estar com a URL da imagem atualizada");
@@ -190,24 +177,20 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve lançar MenuItemNotFound se o item não for encontrado na cafeteria ao tentar salvar imagem")
     void saveImage_ThrowsMenuItemNotFound() {
-        // Arrange
         when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Produto Inexistente"))
                 .thenReturn(Optional.empty());
 
-        // Act & Assert
         assertThrows(MenuItemNotFound.class, () -> {
             menuItemService.saveImage(activeCafeteria, "Produto Inexistente", mockFile);
         });
 
-        // Garantia de que não interagiu com Storage nem salvou
         verify(imageService, never()).saveImage(any(), anyString(), anyString(), anyString());
         verify(menuItemsRepository, never()).save(any(MenuItem.class));
     }
 
     @Test
-    @DisplayName("Deve propagar exceção e não salvar no banco se o StorageImageService falhar ao salvar imagem do item")
+    @DisplayName("Deve propagar exceção e não salvar no banco se o StorageImageService falhar ao salvar imagem")
     void saveImage_ThrowsExceptionWhenStorageFails() {
-        // Arrange
         String subfolderEsperada = "items-Cantina Central/";
 
         when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
@@ -216,14 +199,12 @@ class MenuItemServiceTest {
         when(imageService.saveImage(any(), eq(subfolderEsperada), eq("item-123"), eq("Coxinha")))
                 .thenThrow(new RuntimeException("Erro ao fazer upload da imagem no bucket"));
 
-        // Act & Assert
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             menuItemService.saveImage(activeCafeteria, "Coxinha", mockFile);
         });
 
         assertEquals("Erro ao fazer upload da imagem no bucket", exception.getMessage());
 
-        // Garantia arquitetural de que o "item" não foi atualizado no banco com URL inválida
         assertNull(menuItem.getImageUrl());
         verify(menuItemsRepository, never()).save(any(MenuItem.class));
     }
@@ -233,7 +214,6 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve retornar apenas os itens que estão disponíveis da cafeteria")
     void getMenuItemsForCafeteria_Success() {
-        // Arrange
         MenuItem availableItem = MenuItem.builder()
                 .id("item-1")
                 .cafeteria(activeCafeteria)
@@ -251,10 +231,8 @@ class MenuItemServiceTest {
         when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId()))
                 .thenReturn(List.of(availableItem, unavailableItem));
 
-        // Act
         List<MenuItemResponse> result = menuItemService.getMenuItemsForCafeteria(activeCafeteria.getId());
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.size(), "Deve retornar apenas 1 item (o disponível)");
         assertEquals("Coxinha", result.get(0).name());
@@ -264,11 +242,204 @@ class MenuItemServiceTest {
     @Test
     @DisplayName("Deve lançar NoMenuItemsYet quando a cafeteria não possuir nenhum item cadastrado")
     void getMenuItemsForCafeteria_ThrowsNoMenuItemsYet() {
-        // Arrange
         when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId())).thenReturn(Collections.emptyList());
 
-        // Act & Assert
         assertThrows(NoMenuItemsYet.class, () -> menuItemService.getMenuItemsForCafeteria(activeCafeteria.getId()));
         verify(menuItemsRepository, times(1)).findByCafeteriaId(activeCafeteria.getId());
+    }
+
+    // --- TESTES PARA getAllMyItems ---
+
+    @Test
+    @DisplayName("Deve retornar todos os itens da cafeteria independente de estarem disponíveis")
+    void getAllMyItems_Success() {
+        MenuItem unavailableItem = MenuItem.builder()
+                .id("item-2")
+                .cafeteria(activeCafeteria)
+                .name("Bolo")
+                .availability(false)
+                .build();
+
+        when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId()))
+                .thenReturn(List.of(menuItem, unavailableItem));
+
+        List<MenuItemResponse> result = menuItemService.getAllMyItems(activeCafeteria);
+
+        assertNotNull(result);
+        assertEquals(2, result.size(), "Deve retornar todos os itens");
+        verify(menuItemsRepository, times(1)).findByCafeteriaId(activeCafeteria.getId());
+    }
+
+    @Test
+    @DisplayName("Deve lançar NoMenuItemsYet quando getAllMyItems encontrar lista vazia")
+    void getAllMyItems_ThrowsNoMenuItemsYet() {
+        when(menuItemsRepository.findByCafeteriaId(activeCafeteria.getId())).thenReturn(Collections.emptyList());
+
+        assertThrows(NoMenuItemsYet.class, () -> menuItemService.getAllMyItems(activeCafeteria));
+    }
+
+    // --- TESTES PARA addStock ---
+
+    @Test
+    @DisplayName("Deve adicionar estoque a um item existente com sucesso")
+    void addStock_Success() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
+                .thenReturn(Optional.of(menuItem));
+        when(menuItemsRepository.save(any(MenuItem.class))).thenAnswer(i -> i.getArgument(0));
+
+        MenuItemResponse result = menuItemService.addStock(activeCafeteria, "Coxinha", 10);
+
+        assertNotNull(result);
+        assertEquals(30, menuItem.getStock());
+        assertEquals(30, result.stock());
+        verify(menuItemsRepository, times(1)).save(menuItem);
+    }
+
+    @Test
+    @DisplayName("Deve lançar IllegalArgumentException quando tentar adicionar quantidade menor ou igual a zero")
+    void addStock_ThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> menuItemService.addStock(activeCafeteria, "Coxinha", 0));
+        assertThrows(IllegalArgumentException.class, () -> menuItemService.addStock(activeCafeteria, "Coxinha", -5));
+
+        verify(menuItemsRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar MenuItemNotFound ao tentar adicionar estoque a item inexistente")
+    void addStock_ThrowsMenuItemNotFound() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Fantasma"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(MenuItemNotFound.class, () -> menuItemService.addStock(activeCafeteria, "Fantasma", 10));
+    }
+
+    // --- TESTES PARA removeStock ---
+
+    @Test
+    @DisplayName("Deve remover estoque de um item com sucesso quando houver saldo suficiente")
+    void removeStock_Success() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
+                .thenReturn(Optional.of(menuItem));
+        when(menuItemsRepository.save(any(MenuItem.class))).thenAnswer(i -> i.getArgument(0));
+
+        MenuItemResponse result = menuItemService.removeStock(activeCafeteria, "Coxinha", 5);
+
+        assertNotNull(result);
+        assertEquals(15, menuItem.getStock());
+        assertEquals(15, result.stock());
+        verify(menuItemsRepository, times(1)).save(menuItem);
+    }
+
+    @Test
+    @DisplayName("Deve lançar IllegalArgumentException quando quantidade a remover for menor ou igual a zero")
+    void removeStock_ThrowsIllegalArgumentException_InvalidQuantity() {
+        assertThrows(IllegalArgumentException.class, () -> menuItemService.removeStock(activeCafeteria, "Coxinha", 0));
+        assertThrows(IllegalArgumentException.class, () -> menuItemService.removeStock(activeCafeteria, "Coxinha", -10));
+
+        verify(menuItemsRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar IllegalArgumentException quando tentar remover quantidade superior ao estoque atual")
+    void removeStock_ThrowsIllegalArgumentException_InsufficientStock() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
+                .thenReturn(Optional.of(menuItem));
+
+        assertThrows(IllegalArgumentException.class, () -> menuItemService.removeStock(activeCafeteria, "Coxinha", 50));
+        verify(menuItemsRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar MenuItemNotFound ao tentar remover estoque de item inexistente")
+    void removeStock_ThrowsMenuItemNotFound() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Fantasma"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(MenuItemNotFound.class, () -> menuItemService.removeStock(activeCafeteria, "Fantasma", 5));
+    }
+
+    // --- TESTES PARA changeAvailability ---
+
+    @Test
+    @DisplayName("Deve alterar a disponibilidade de um item com sucesso")
+    void changeAvailability_Success() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
+                .thenReturn(Optional.of(menuItem));
+        when(menuItemsRepository.save(any(MenuItem.class))).thenAnswer(i -> i.getArgument(0));
+
+        // Inicialmente true no setUp()
+        menuItemService.changeAvailability(activeCafeteria, "Coxinha", false);
+
+        assertFalse(menuItem.isAvailability());
+        verify(menuItemsRepository, times(1)).save(menuItem);
+    }
+
+    @Test
+    @DisplayName("Deve lançar MenuItemNotFound ao tentar alterar disponibilidade de item inexistente")
+    void changeAvailability_ThrowsMenuItemNotFound() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Fantasma"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(MenuItemNotFound.class, () -> menuItemService.changeAvailability(activeCafeteria, "Fantasma", false));
+    }
+
+    // --- TESTES PARA updateItem ---
+
+    @Test
+    @DisplayName("Deve atualizar campos não nulos de um item com sucesso")
+    void updateItem_Success() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
+                .thenReturn(Optional.of(menuItem));
+        when(menuItemsRepository.save(any(MenuItem.class))).thenAnswer(i -> i.getArgument(0));
+
+        MenuItemRequest updateRequest = new MenuItemRequest(
+                "Coxinha Especial",
+                "Coxinha de frango com requeijão",
+                new BigDecimal("6.00"),
+                Category.SNACK,
+                AvailabilityMode.INVENTORY_CONTROL,
+                null // Stock nulo, não deve atualizar o estoque existente (20)
+        );
+
+        MenuItemResponse result = menuItemService.updateItem(activeCafeteria, "Coxinha", updateRequest);
+
+        assertNotNull(result);
+        assertEquals("Coxinha Especial", menuItem.getName());
+        assertEquals("Coxinha de frango com requeijão", menuItem.getDescription());
+        assertEquals(new BigDecimal("6.00"), menuItem.getPrice());
+        assertEquals(20, menuItem.getStock(), "O estoque não deve ter sido modificado pois o valor no updateRequest era null");
+        verify(menuItemsRepository, times(1)).save(menuItem);
+    }
+
+    @Test
+    @DisplayName("Deve lançar MenuItemNotFound ao tentar atualizar item inexistente")
+    void updateItem_ThrowsMenuItemNotFound() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Fantasma"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(MenuItemNotFound.class, () -> menuItemService.updateItem(activeCafeteria, "Fantasma", request));
+    }
+
+    // --- TESTES PARA deleteItem ---
+
+    @Test
+    @DisplayName("Deve deletar um item existente com sucesso")
+    void deleteItem_Success() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Coxinha"))
+                .thenReturn(Optional.of(menuItem));
+
+        menuItemService.deleteItem(activeCafeteria, "Coxinha");
+
+        verify(menuItemsRepository, times(1)).delete(menuItem);
+    }
+
+    @Test
+    @DisplayName("Deve lançar MenuItemNotFound ao tentar deletar item inexistente")
+    void deleteItem_ThrowsMenuItemNotFound() {
+        when(menuItemsRepository.findByCafeteriaIdAndName(activeCafeteria.getId(), "Fantasma"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(MenuItemNotFound.class, () -> menuItemService.deleteItem(activeCafeteria, "Fantasma"));
+        verify(menuItemsRepository, never()).delete(any());
     }
 }
