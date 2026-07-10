@@ -30,7 +30,7 @@ public class MenuItemController {
         return ResponseEntity.ok(item);
     }
 
-    @PostMapping(value = "/my/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/item/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadImagem(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam("name") String name,

@@ -81,6 +81,79 @@ public class MenuItemService {
         return menuResponse;
     }
 
+    public List<MenuItem> getAllMyItems(Cafeteria cafeteria){
+        List<MenuItem> menu = menuItemsRepository.findByCafeteriaId(cafeteria.getId());
+        if(menu.isEmpty()){
+            throw new NoMenuItemsYet();
+        }
+        return menu;
+    }
+
+    public MenuItemResponse addStock(Cafeteria cafeteria, String itemName, Integer quantity){
+        if(quantity <= 0){
+            throw new IllegalArgumentException("Impossível adicionar um valor menor que 0: " + quantity);
+        }
+        MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
+                () -> new MenuItemNotFound(itemName)
+        );
+        item.setStock(item.getStock() + quantity);
+        return toResponse(menuItemsRepository.save(item));
+    }
+
+    public MenuItemResponse removeStock(Cafeteria cafeteria, String itemName, Integer quantity){
+        if(quantity <= 0){
+            throw new IllegalArgumentException("Impossível remover um valor menor que 0: " + quantity);
+        }
+        MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
+                () -> new MenuItemNotFound(itemName)
+        );
+        if(item.getStock() < quantity){
+            throw new IllegalArgumentException("Estoque indisponível. Estoque atual: " + item.getStock());
+        }
+        item.setStock(item.getStock() - quantity);
+        return toResponse(menuItemsRepository.save(item));
+    }
+
+    public MenuItemResponse changeAvailability(Cafeteria cafeteria, String itemName, Boolean currentAvailability){
+        MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
+                () -> new MenuItemNotFound(itemName)
+        );
+        item.setAvailability(currentAvailability);
+        return toResponse(menuItemsRepository.save(item));
+    }
+
+    public MenuItemResponse updateItem(Cafeteria cafeteria, String itemName, MenuItemRequest newMenuItem){
+        MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
+                () -> new MenuItemNotFound(itemName)
+        );
+        if(newMenuItem.name() != null){
+            item.setName(newMenuItem.name());
+        }
+        if(newMenuItem.description() != null){
+            item.setDescription(newMenuItem.description());
+        }
+        if(newMenuItem.price() != null){
+            item.setPrice(newMenuItem.price());
+        }
+        if(newMenuItem.category() != null){
+            item.setCategory(newMenuItem.category());
+        }
+        if(newMenuItem.availabilityMode() != null){
+            item.setAvailabilityMode(newMenuItem.availabilityMode());
+        }
+        if(newMenuItem.stock() != null){
+            item.setStock(newMenuItem.stock());
+        }
+        return toResponse(menuItemsRepository.save(item));
+    }
+
+    public void deleteItem(Cafeteria cafeteria, String itemName){
+        MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
+                () -> new MenuItemNotFound(itemName)
+        );
+        menuItemsRepository.delete(item);
+    }
+
     private MenuItemResponse toResponse(MenuItem menuItem){
         return new MenuItemResponse(
                 menuItem.getCafeteria().getName(),
