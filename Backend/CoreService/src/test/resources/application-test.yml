@@ -17,5 +17,5 @@ app:
   diretorio:
     imagens: /tmp/test-imagens/
 
-JWT_SECRET: "umachavefalsabemgrandeparaostestesrodaremcomsucesso"
+JWT_SECRET: "dW1hY2hhdmVmYWxzYWJlbWdyYW5kZXBhcmFvc3Rlc3Rlcw=="
 JWT_EXPIRATION_MS: 1440
