@@ -66,6 +66,11 @@ public class CafeteriaController {
         return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<CafeteriaResponse> getMyCafeteria(@PathVariable String name){
+        return ResponseEntity.ok(cafeteriaService.getMyCafeteria(name));
+    }
+
     @GetMapping("/public/{campus}/all")
     public ResponseEntity<List<CafeteriaResponse>> getAllCafeterias(@PathVariable Campus campus){
         return ResponseEntity.ok(cafeteriaService.getCafeteriaByCampus(campus));
