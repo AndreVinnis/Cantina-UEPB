@@ -59,7 +59,7 @@ class CafeteriaControllerTest {
     @BeforeEach
     void setUp() {
         request = new CafeteriaRequest("NovaLanchonete", "novalanchonete@gmail.com", "12345678", Campus.CAMPUS_VII);
-        response = new CafeteriaResponse("NovaLanchonete", "novalanchonete@gmail.com", true, "url/da/foto");
+        response = new CafeteriaResponse("NovaLanchonete", "novalanchonete@gmail.com", "url/da/foto");
         mockCafeteria = Mockito.mock(Cafeteria.class);
         Mockito.when(mockCafeteria.getUsername()).thenReturn("admin_cafeteria");
         UsernamePasswordAuthenticationToken authentication =

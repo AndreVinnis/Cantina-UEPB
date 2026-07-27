@@ -67,8 +67,8 @@ public class CafeteriaController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CafeteriaResponse> getMyCafeteria(@PathVariable String name){
-        return ResponseEntity.ok(cafeteriaService.getMyCafeteria(name));
+    public ResponseEntity<CafeteriaResponse> getCafeteriaById(@PathVariable String id){
+        return ResponseEntity.ok(cafeteriaService.getCafeteriaById(id));
     }
 
     @GetMapping("/public/{campus}/all")
