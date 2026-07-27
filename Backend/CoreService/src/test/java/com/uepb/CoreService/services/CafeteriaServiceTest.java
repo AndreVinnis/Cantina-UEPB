@@ -196,8 +196,6 @@ class CafeteriaServiceTest {
         // Assert
         assertNotNull(response);
         assertEquals(cafeteria.getName(), response.name());
-        assertEquals(cafeteria.getEmail(), response.email());
-        assertEquals(cafeteria.isActive(), response.active());
         verify(cafeteriaRepository, times(1)).findByEmail(cafeteria.getEmail());
     }
 
@@ -228,7 +226,6 @@ class CafeteriaServiceTest {
         // Assert
         assertNotNull(response);
         assertEquals("Novo Nome", response.name());
-        assertEquals("novo@email.com", response.email());
 
         verify(cafeteriaRepository, times(1)).findByEmail("contato@centralperk.com");
         verify(encoder, times(1)).encode("novaSenha123");
@@ -249,7 +246,6 @@ class CafeteriaServiceTest {
 
         // Assert
         assertEquals("Apenas Novo Nome", response.name());
-        assertEquals("contato@centralperk.com", response.email()); // E-mail deve permanecer o antigo
         assertEquals("oldHashedPassword", cafeteria.getHashPassword()); // Senha não deve ser alterada
 
         verify(encoder, never()).encode(anyString()); // Não deve chamar o encoder se não mandou senha

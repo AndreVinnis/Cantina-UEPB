@@ -121,6 +121,13 @@ public class CafeteriaService {
         return imagePath;
     }
 
+    public CafeteriaResponse getCafeteriaById(String id){
+        Cafeteria cafeteria = cafeteriaRepository.findById(id).orElseThrow(
+                () -> new CafeteriaNotFound(null)
+        );
+        return toResponse(cafeteria);
+    }
+
     public List<CafeteriaResponse> getCafeteriaByCampus(Campus campus){
         List<Cafeteria> cafeterias = cafeteriaRepository.findByCampus(campus);
         if(cafeterias.isEmpty()){
@@ -129,7 +136,9 @@ public class CafeteriaService {
 
         List<CafeteriaResponse> cafeteriasResponses = new ArrayList<>();
         for(Cafeteria cafeteria: cafeterias){
-            cafeteriasResponses.add(toResponse(cafeteria));
+            if(cafeteria.isActive()){
+                cafeteriasResponses.add(toResponse(cafeteria));
+            }
         }
         return cafeteriasResponses;
     }
@@ -144,9 +153,8 @@ public class CafeteriaService {
 
     private CafeteriaResponse toResponse(Cafeteria cafeteria){
         return new CafeteriaResponse(
+                cafeteria.getId(),
                 cafeteria.getName(),
-                cafeteria.getEmail(),
-                cafeteria.isActive(),
                 cafeteria.getImageUrl()
         );
     }
