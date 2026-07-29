@@ -27,7 +27,10 @@ public class Order {
     private String sessionToken;
 
     @Column(nullable = false)
-    private String cantinaId;
+    private String cafeteriaId;
+
+    @Column(nullable = false)
+    private String cafeteriaName;
 
     @Column(nullable = false, length = 100)
     private String clientName;
@@ -36,15 +39,12 @@ public class Order {
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
-    @Column(nullable = false)
     private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Status status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
