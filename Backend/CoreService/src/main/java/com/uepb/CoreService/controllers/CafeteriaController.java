@@ -2,9 +2,11 @@ package com.uepb.CoreService.controllers;
 
 import com.uepb.CoreService.config.JwtService;
 import com.uepb.CoreService.domain.Cafeteria;
+import com.uepb.CoreService.dto.request.OrderItemRequest;
 import com.uepb.CoreService.dto.response.AuthResponse;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
+import com.uepb.CoreService.dto.response.ItemsResponse;
 import com.uepb.CoreService.dto.response.MenuItemResponse;
 import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.services.CafeteriaService;
@@ -79,5 +81,22 @@ public class CafeteriaController {
     @GetMapping("/public/{campus}/{name}")
     public ResponseEntity<List<MenuItemResponse>> getItems(@PathVariable String name, @PathVariable Campus campus){
         return ResponseEntity.ok(cafeteriaService.getItemsForCafeteria(name, campus));
+    }
+
+    @PostMapping("/internal/{id}/items/validate")
+    public ResponseEntity<List<ItemsResponse>> validateItems(
+            @PathVariable String id,
+            @RequestBody @Valid List<OrderItemRequest> orderRequest
+    ){
+        return ResponseEntity.ok(cafeteriaService.valideItems(id, orderRequest));
+    }
+
+    @PostMapping("/internal/{id}/items/decrements")
+    public ResponseEntity<Void> decrementsStock(
+            @PathVariable String id,
+            @RequestBody @Valid List<OrderItemRequest> orderRequest
+    ){
+        cafeteriaService.decrementsStock(id, orderRequest);
+        return ResponseEntity.ok().build();
     }
 }

@@ -47,7 +47,8 @@ public class GlobalExceptionHandler {
     // Tratamento para regras de negócio não atendidas/má requisição (HTTP 400)
     @ExceptionHandler({
             ShortPasswordException.class,
-            CafeteriaIsNotActive.class
+            CafeteriaIsNotActive.class,
+            IllegalArgumentException.class
     })
     public ResponseEntity<StandardError> handleBadRequestExceptions(RuntimeException ex, HttpServletRequest request) {
         StandardError error = new StandardError(
