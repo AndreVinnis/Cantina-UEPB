@@ -1,9 +1,13 @@
 package com.uepb.CoreService.services;
 
 import com.uepb.CoreService.domain.Cafeteria;
+import com.uepb.CoreService.domain.MenuItem;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
+import com.uepb.CoreService.dto.request.OrderItemRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
+import com.uepb.CoreService.dto.response.ItemsResponse;
 import com.uepb.CoreService.dto.response.MenuItemResponse;
+import com.uepb.CoreService.enums.AvailabilityMode;
 import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.*;
@@ -66,6 +70,7 @@ public class CafeteriaService {
         return cafeteriaRepository.save(cafeteria);
     }
 
+    @Transactional
     public CafeteriaResponse getMyCafeteria(String email){
         Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
 
@@ -76,6 +81,7 @@ public class CafeteriaService {
         return toResponse(cafeteria);
     }
 
+    @Transactional
     public CafeteriaResponse updateCafeteria(String email, CafeteriaRequest newCafeteria){
         Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
 
@@ -96,6 +102,7 @@ public class CafeteriaService {
         return toResponse(cafeteria);
     }
 
+    @Transactional
     public void delete(String email){
         Cafeteria cafeteria = (Cafeteria) cafeteriaRepository.findByEmail(email);
 
@@ -113,6 +120,7 @@ public class CafeteriaService {
         return EMAIL_PATTERN.matcher(email).matches();
     }
 
+    @Transactional
     public String saveImage(Cafeteria cafeteria, MultipartFile file) {
         String subfolder = "cafeterias/";
         String imagePath = imageService.saveImage(file, subfolder, cafeteria.getId(), cafeteria.getName());
@@ -121,6 +129,7 @@ public class CafeteriaService {
         return imagePath;
     }
 
+    @Transactional
     public CafeteriaResponse getCafeteriaById(String id){
         Cafeteria cafeteria = cafeteriaRepository.findById(id).orElseThrow(
                 () -> new CafeteriaNotFound(null)
@@ -128,6 +137,7 @@ public class CafeteriaService {
         return toResponse(cafeteria);
     }
 
+    @Transactional
     public List<CafeteriaResponse> getCafeteriaByCampus(Campus campus){
         List<Cafeteria> cafeterias = cafeteriaRepository.findByCampus(campus);
         if(cafeterias.isEmpty()){
@@ -143,12 +153,47 @@ public class CafeteriaService {
         return cafeteriasResponses;
     }
 
+    @Transactional
     public List<MenuItemResponse> getItemsForCafeteria(String name, Campus campus){
         Cafeteria cafeteria = cafeteriaRepository.findByNameAndCampus(name, campus).orElseThrow(
                 () -> new CafeteriaNotFound(name)
         );
 
         return menuItemService.getMenuItemsForCafeteria(cafeteria.getId());
+    }
+
+    @Transactional
+    public List<ItemsResponse> valideItems(String cafeteriaId, List<OrderItemRequest> orderRequest){
+        List<ItemsResponse> itemsResponses = new ArrayList<>();
+        Cafeteria cafeteria = cafeteriaRepository.findById(cafeteriaId).orElseThrow(
+                () -> new CafeteriaNotFound(null)
+        );
+
+        for(OrderItemRequest item: orderRequest){
+            MenuItem menuItem = menuItemService.findByName(cafeteriaId, item.productName());
+            if(menuItem.getAvailabilityMode() == AvailabilityMode.INVENTORY_CONTROL){
+                if(menuItem.getStock() < item.quantity()){
+                    throw new IllegalArgumentException("Estoque indisponível. Estoque atual: " + menuItem.getStock());
+                }
+            }
+            ItemsResponse itemsResponse = new ItemsResponse(menuItem.getId(), menuItem.getName(), item.quantity(), menuItem.getPrice());
+            itemsResponses.add(itemsResponse);
+        }
+        return itemsResponses;
+    }
+
+    @Transactional
+    public void decrementsStock(String cafeteriaId, List<OrderItemRequest> orderRequest){
+        Cafeteria cafeteria = cafeteriaRepository.findById(cafeteriaId).orElseThrow(
+                () -> new CafeteriaNotFound(null)
+        );
+
+        for(OrderItemRequest item: orderRequest){
+            MenuItem menuItem = menuItemService.findByName(cafeteriaId, item.productName());
+            if(menuItem.getAvailabilityMode() == AvailabilityMode.INVENTORY_CONTROL){
+                menuItemService.removeStock(cafeteria, menuItem.getName(), item.quantity());
+            }
+        }
     }
 
     private CafeteriaResponse toResponse(Cafeteria cafeteria){

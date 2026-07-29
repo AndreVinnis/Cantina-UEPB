@@ -1,9 +1,13 @@
 package com.uepb.CoreService.services;
 
 import com.uepb.CoreService.domain.Cafeteria;
+import com.uepb.CoreService.domain.MenuItem;
 import com.uepb.CoreService.dto.request.CafeteriaRequest;
+import com.uepb.CoreService.dto.request.OrderItemRequest;
 import com.uepb.CoreService.dto.response.CafeteriaResponse;
+import com.uepb.CoreService.dto.response.ItemsResponse;
 import com.uepb.CoreService.dto.response.MenuItemResponse;
+import com.uepb.CoreService.enums.AvailabilityMode;
 import com.uepb.CoreService.enums.Campus;
 import com.uepb.CoreService.enums.UserRole;
 import com.uepb.CoreService.exceptions.*;
@@ -23,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -390,5 +395,118 @@ class CafeteriaServiceTest {
 
         verify(cafeteriaRepository, times(1)).findByNameAndCampus(nomeInexistente, Campus.CAMPUS_VII);
         verify(menuItemService, never()).getMenuItemsForCafeteria(anyString());
+    }
+
+    @Test
+    @DisplayName("Deve retornar os dados da cafeteria ao buscar por ID")
+    void getCafeteriaById_Success() {
+        when(cafeteriaRepository.findById(cafeteria.getId())).thenReturn(Optional.of(cafeteria));
+
+        CafeteriaResponse response = cafeteriaService.getCafeteriaById(cafeteria.getId());
+
+        assertNotNull(response);
+        assertEquals(cafeteria.getId(), response.id());
+        assertEquals(cafeteria.getName(), response.name());
+        verify(cafeteriaRepository, times(1)).findById(cafeteria.getId());
+    }
+
+    @Test
+    @DisplayName("Deve lançar CafeteriaNotFound ao buscar por um ID inexistente")
+    void getCafeteriaById_ThrowsCafeteriaNotFound() {
+        when(cafeteriaRepository.findById("id-invalido")).thenReturn(Optional.empty());
+
+        assertThrows(CafeteriaNotFound.class, () -> cafeteriaService.getCafeteriaById("id-invalido"));
+        verify(cafeteriaRepository, times(1)).findById("id-invalido");
+    }
+
+    @Test
+    @DisplayName("Deve validar itens com sucesso quando há estoque suficiente ou não exige controle")
+    void valideItems_Success() {
+        List<OrderItemRequest> orders = List.of(new OrderItemRequest("Coxinha", 2));
+
+        MenuItem menuItem = new MenuItem();
+        menuItem.setId("item123");
+        menuItem.setName("Coxinha");
+        menuItem.setPrice(BigDecimal.valueOf(5.0));
+        menuItem.setAvailabilityMode(AvailabilityMode.INVENTORY_CONTROL);
+        menuItem.setStock(5);
+
+        when(cafeteriaRepository.findById(cafeteria.getId())).thenReturn(Optional.of(cafeteria));
+        when(menuItemService.findByName(cafeteria.getId(), "Coxinha")).thenReturn(menuItem);
+
+        List<ItemsResponse> result = cafeteriaService.valideItems(cafeteria.getId(), orders);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("item123", result.get(0).id());
+        assertEquals("Coxinha", result.get(0).name());
+        assertEquals(2, result.get(0).quantity());
+        assertEquals(BigDecimal.valueOf(5.0), result.get(0).uniquePrice());
+    }
+
+    @Test
+    @DisplayName("Deve lançar IllegalArgumentException na validação quando estoque for insuficiente")
+    void valideItems_ThrowsIllegalArgumentExceptionForInsufficientStock() {
+        List<OrderItemRequest> orders = List.of(new OrderItemRequest("Coxinha", 10)); // Pede 10
+
+        MenuItem menuItem = new MenuItem();
+        menuItem.setId("item123");
+        menuItem.setName("Coxinha");
+        menuItem.setAvailabilityMode(AvailabilityMode.INVENTORY_CONTROL);
+        menuItem.setStock(5);
+
+        when(cafeteriaRepository.findById(cafeteria.getId())).thenReturn(Optional.of(cafeteria));
+        when(menuItemService.findByName(cafeteria.getId(), "Coxinha")).thenReturn(menuItem);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> cafeteriaService.valideItems(cafeteria.getId(), orders));
+
+        assertEquals("Estoque indisponível. Estoque atual: 5", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Deve lançar CafeteriaNotFound na validação de itens com ID inexistente")
+    void valideItems_ThrowsCafeteriaNotFound() {
+        when(cafeteriaRepository.findById("id-invalido")).thenReturn(Optional.empty());
+
+        assertThrows(CafeteriaNotFound.class,
+                () -> cafeteriaService.valideItems("id-invalido", List.of()));
+    }
+
+    @Test
+    @DisplayName("Deve decrementar estoque apenas de itens que exigem controle de inventário")
+    void decrementsStock_Success() {
+        List<OrderItemRequest> orders = List.of(
+                new OrderItemRequest("Coxinha", 2),
+                new OrderItemRequest("Refrigerante", 1)
+        );
+
+        MenuItem coxinha = new MenuItem();
+        coxinha.setName("Coxinha");
+        coxinha.setAvailabilityMode(AvailabilityMode.INVENTORY_CONTROL);
+
+        MenuItem refrigerante = new MenuItem();
+        refrigerante.setName("Refrigerante");
+        refrigerante.setAvailabilityMode(AvailabilityMode.SIMPLE_AVAILABILITY);
+
+        when(cafeteriaRepository.findById(cafeteria.getId())).thenReturn(Optional.of(cafeteria));
+        when(menuItemService.findByName(cafeteria.getId(), "Coxinha")).thenReturn(coxinha);
+        when(menuItemService.findByName(cafeteria.getId(), "Refrigerante")).thenReturn(refrigerante);
+
+        cafeteriaService.decrementsStock(cafeteria.getId(), orders);
+
+        verify(menuItemService, times(1)).removeStock(cafeteria, "Coxinha", 2);
+        verify(menuItemService, never()).removeStock(eq(cafeteria), eq("Refrigerante"), anyInt());
+    }
+
+    @Test
+    @DisplayName("Deve lançar CafeteriaNotFound ao tentar decrementar estoque de cafeteria inexistente")
+    void decrementsStock_ThrowsCafeteriaNotFound() {
+        when(cafeteriaRepository.findById("id-invalido")).thenReturn(Optional.empty());
+
+        assertThrows(CafeteriaNotFound.class,
+                () -> cafeteriaService.decrementsStock("id-invalido", List.of()));
+
+        verify(menuItemService, never()).removeStock(any(), anyString(), anyInt());
     }
 }

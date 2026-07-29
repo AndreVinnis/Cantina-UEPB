@@ -22,7 +22,7 @@ import java.util.List;
 public class MenuItemService {
 
     @Autowired
-    MenuItemRepository menuItemsRepository;
+    private MenuItemRepository menuItemsRepository;
 
     @Autowired
     private StorageImageService imageService;
@@ -55,6 +55,7 @@ public class MenuItemService {
         return toResponse(menuItem);
     }
 
+    @Transactional
     public String saveImage(Cafeteria cafeteria, String name, MultipartFile file) {
         MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), name).orElseThrow(
                 () -> new MenuItemNotFound(name)
@@ -66,6 +67,7 @@ public class MenuItemService {
         return imagePath;
     }
 
+    @Transactional
     public List<MenuItemResponse> getMenuItemsForCafeteria(String cafeteriaId){
         List<MenuItem> menu = menuItemsRepository.findByCafeteriaId(cafeteriaId);
         if(menu.isEmpty()){
@@ -81,6 +83,7 @@ public class MenuItemService {
         return menuResponse;
     }
 
+    @Transactional
     public List<MenuItemResponse> getAllMyItems(Cafeteria cafeteria){
         List<MenuItem> menu = menuItemsRepository.findByCafeteriaId(cafeteria.getId());
         if(menu.isEmpty()){
@@ -93,6 +96,14 @@ public class MenuItemService {
         return menuResponse;
     }
 
+    public MenuItem findByName(String cafeteriaId, String itemName){
+        MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteriaId, itemName).orElseThrow(
+                () -> new MenuItemNotFound(itemName)
+        );
+        return item;
+    }
+
+    @Transactional
     public MenuItemResponse addStock(Cafeteria cafeteria, String itemName, Integer quantity){
         if(quantity <= 0){
             throw new IllegalArgumentException("Impossível adicionar um valor menor que 0: " + quantity);
@@ -104,6 +115,7 @@ public class MenuItemService {
         return toResponse(menuItemsRepository.save(item));
     }
 
+    @Transactional
     public MenuItemResponse removeStock(Cafeteria cafeteria, String itemName, Integer quantity){
         if(quantity <= 0){
             throw new IllegalArgumentException("Impossível remover um valor menor que 0: " + quantity);
@@ -118,6 +130,7 @@ public class MenuItemService {
         return toResponse(menuItemsRepository.save(item));
     }
 
+    @Transactional
     public MenuItemResponse changeAvailability(Cafeteria cafeteria, String itemName, Boolean currentAvailability){
         MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
                 () -> new MenuItemNotFound(itemName)
@@ -126,6 +139,7 @@ public class MenuItemService {
         return toResponse(menuItemsRepository.save(item));
     }
 
+    @Transactional
     public MenuItemResponse updateItem(Cafeteria cafeteria, String itemName, MenuItemRequest newMenuItem){
         MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
                 () -> new MenuItemNotFound(itemName)
@@ -151,6 +165,7 @@ public class MenuItemService {
         return toResponse(menuItemsRepository.save(item));
     }
 
+    @Transactional
     public void deleteItem(Cafeteria cafeteria, String itemName){
         MenuItem item = menuItemsRepository.findByCafeteriaIdAndName(cafeteria.getId(), itemName).orElseThrow(
                 () -> new MenuItemNotFound(itemName)
