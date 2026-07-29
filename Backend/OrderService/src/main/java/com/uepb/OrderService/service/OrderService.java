@@ -32,9 +32,6 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
-    private OrderItemRepository orderItemRepository;
-
-    @Autowired
     private CoreService coreService;
 
     @Transactional

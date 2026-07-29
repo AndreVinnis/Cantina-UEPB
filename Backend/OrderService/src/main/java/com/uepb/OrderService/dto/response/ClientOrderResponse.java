@@ -8,7 +8,7 @@ import java.util.List;
 
 public record ClientOrderResponse(
         String sessionToken,
-        String cantinaName,
+        String cafeteriaName,
         List<OrderItemResponse> items,
         BigDecimal totalPrice,
         PaymentMethod paymentMethod,
