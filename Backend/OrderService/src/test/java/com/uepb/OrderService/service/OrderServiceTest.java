@@ -54,6 +54,7 @@ class OrderServiceTest {
     private OrderRequest orderRequest;
     private final String CAFETERIA_ID = "cafeteria-id-123";
     private final String CLIENT_CPF = "12345678900";
+    private final String SESSION_TOKEN = "TOKEN-1234";
 
     @BeforeEach
     void setup() {
@@ -229,6 +230,24 @@ class OrderServiceTest {
     }
 
     @Test
+    @DisplayName("Deve alterar o status para CANCELLED e processar o estorno do estoque")
+    void shouldChangeOrderStatusToCancelledAndProcessRefund() {
+        // Arrange
+        Order order = createMockOrder("1", Status.PENDING);
+        when(coreService.getIdCafeteria()).thenReturn(CAFETERIA_ID);
+        when(orderRepository.findById("1")).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).then(AdditionalAnswers.returnsFirstArg());
+
+        // Act
+        CafeteriaOrderResponse response = orderService.changeOrderStatus("1", Status.CANCELLED);
+
+        // Assert
+        assertEquals(Status.CANCELLED, response.status());
+        verify(orderRepository, times(1)).save(order);
+        verify(coreService, times(1)).incrementsStock(eq(CAFETERIA_ID), anyList());
+    }
+
+    @Test
     @DisplayName("Deve lançar OrderNotFound ao tentar alterar status de pedido inexistente")
     void shouldThrowOrderNotFoundWhenChangingStatusOfNonExistentOrder() {
         // Arrange
@@ -306,30 +325,58 @@ class OrderServiceTest {
     }
 
     @Test
-    @DisplayName("Deve cancelar o pedido com sucesso se estiver em um status elegível")
+    @DisplayName("Deve cancelar o pedido do cliente com sucesso pelo sessionToken e processar estorno")
     void shouldCancelOrderSuccessfully() {
         // Arrange
         Order order = createMockOrder("1", Status.PENDING);
-        when(orderRepository.findById("1")).thenReturn(Optional.of(order));
+        when(orderRepository.findBySessionToken(SESSION_TOKEN)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).then(AdditionalAnswers.returnsFirstArg());
 
         // Act
-        ClientOrderResponse response = orderService.cancelOrder("1");
+        ClientOrderResponse response = orderService.cancelOrder(SESSION_TOKEN);
 
         // Assert
         assertEquals(Status.CANCELLED, response.status());
         verify(orderRepository, times(1)).save(order);
+        verify(coreService, times(1)).incrementsStock(eq(CAFETERIA_ID), anyList());
     }
 
     @Test
-    @DisplayName("Deve lançar InvalidStatus ao tentar cancelar um pedido que já está em preparo")
+    @DisplayName("Deve cancelar o pedido sem processar estorno se o status for AWANTING_PAYMENT")
+    void shouldCancelOrderWithoutRefundWhenAwaitingPayment() {
+        // Arrange
+        Order order = createMockOrder("1", Status.AWANTING_PAYMENT);
+        when(orderRepository.findBySessionToken(SESSION_TOKEN)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).then(AdditionalAnswers.returnsFirstArg());
+
+        // Act
+        ClientOrderResponse response = orderService.cancelOrder(SESSION_TOKEN);
+
+        // Assert
+        assertEquals(Status.CANCELLED, response.status());
+        verify(orderRepository, times(1)).save(order);
+        verify(coreService, never()).incrementsStock(anyString(), anyList());
+    }
+
+    @Test
+    @DisplayName("Deve lançar InvalidStatus ao tentar cancelar um pedido pelo sessionToken que já está em preparo")
     void shouldThrowInvalidStatusWhenCancelingOrderInPreparation() {
         // Arrange
         Order order = createMockOrder("1", Status.IN_PROGRESS);
-        when(orderRepository.findById("1")).thenReturn(Optional.of(order));
+        when(orderRepository.findBySessionToken(SESSION_TOKEN)).thenReturn(Optional.of(order));
 
         // Act & Assert
-        assertThrows(InvalidStatus.class, () -> orderService.cancelOrder("1"));
+        assertThrows(InvalidStatus.class, () -> orderService.cancelOrder(SESSION_TOKEN));
+    }
+
+    @Test
+    @DisplayName("Deve lançar OrderNotFound ao tentar cancelar um pedido com sessionToken inexistente")
+    void shouldThrowOrderNotFoundWhenCancelingWithWrongSessionToken() {
+        // Arrange
+        when(orderRepository.findBySessionToken("TOKEN-INVALIDO")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(OrderNotFound.class, () -> orderService.cancelOrder("TOKEN-INVALIDO"));
     }
 
     // Método utilitário para criar pedidos falsos populados para testes de mapeamento
@@ -337,12 +384,12 @@ class OrderServiceTest {
         Order order = new Order();
         order.setId(id);
         order.setClientName("Cliente Teste");
-        order.setClientCpf(CLIENT_CPF); // NOVO
+        order.setClientCpf(CLIENT_CPF);
         order.setCafeteriaId(CAFETERIA_ID);
         order.setCafeteriaName("Cafeteria Central");
         order.setPaymentMethod(PaymentMethod.PIX);
         order.setStatus(status);
-        order.setSessionToken("TOKEN-1234");
+        order.setSessionToken(SESSION_TOKEN);
 
         OrderItem orderItem = OrderItem.builder()
                 .order(order)

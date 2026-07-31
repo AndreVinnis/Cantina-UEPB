@@ -22,7 +22,13 @@ public interface CoreService {
     );
 
     @PostMapping("/cafeteria/internal/{id}/items/decrements")
-    Void decrementsStock(
+    void decrementsStock(
+            @PathVariable("id") String id,
+            @RequestBody List<OrderItemRequest> orderRequest
+    );
+
+    @PostMapping("/cafeteria/internal/{id}/items/increments")
+    void incrementsStock(
             @PathVariable("id") String id,
             @RequestBody List<OrderItemRequest> orderRequest
     );

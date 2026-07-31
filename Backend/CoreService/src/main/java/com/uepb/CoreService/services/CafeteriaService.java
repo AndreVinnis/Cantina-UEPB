@@ -196,6 +196,20 @@ public class CafeteriaService {
         }
     }
 
+    @Transactional
+    public void incrementsStock(String cafeteriaId, List<OrderItemRequest> orderRequest){
+        Cafeteria cafeteria = cafeteriaRepository.findById(cafeteriaId).orElseThrow(
+                () -> new CafeteriaNotFound(null)
+        );
+
+        for(OrderItemRequest item: orderRequest){
+            MenuItem menuItem = menuItemService.findByName(cafeteriaId, item.productName());
+            if(menuItem.getAvailabilityMode() == AvailabilityMode.INVENTORY_CONTROL){
+                menuItemService.addStock(cafeteria, menuItem.getName(), item.quantity());
+            }
+        }
+    }
+
     private CafeteriaResponse toResponse(Cafeteria cafeteria){
         return new CafeteriaResponse(
                 cafeteria.getId(),

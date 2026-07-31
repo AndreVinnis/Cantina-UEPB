@@ -14,4 +14,6 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     List<Order> findByCafeteriaId(String cafeteriaId);
 
     List<Order> findByClientCpf(String cpf);
+
+    Optional<Order> findBySessionToken(String sessionToken);
 }

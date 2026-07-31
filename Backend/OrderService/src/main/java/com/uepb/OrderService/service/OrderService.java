@@ -3,6 +3,7 @@ package com.uepb.OrderService.service;
 import com.uepb.OrderService.domain.Order;
 import com.uepb.OrderService.domain.OrderItem;
 import com.uepb.OrderService.dto.events.OrderCreatedEvent;
+import com.uepb.OrderService.dto.request.OrderItemRequest;
 import com.uepb.OrderService.dto.request.OrderRequest;
 import com.uepb.OrderService.dto.response.CafeteriaOrderResponse;
 import com.uepb.OrderService.dto.response.ClientOrderResponse;
@@ -94,18 +95,22 @@ public class OrderService {
     }
 
     @Transactional
-    public ClientOrderResponse cancelOrder(String id){
+    public ClientOrderResponse cancelOrder(String sessionToken){
         List<Status> ableChangeStatus = List.of(
                 Status.PENDING,
                 Status.AWANTING_PAYMENT,
                 Status.CONFIRMED
         );
-        Order order = orderRepository.findById(id).orElseThrow(
-                () -> new OrderNotFound(id)
+        Order order = orderRepository.findBySessionToken(sessionToken).orElseThrow(
+                () -> new OrderNotFound(sessionToken)
         );
 
         if(!ableChangeStatus.contains(order.getStatus())){
             throw new InvalidStatus(order.getStatus(), Status.CANCELLED);
+        }
+
+        if(!order.getStatus().equals(Status.AWANTING_PAYMENT)){
+            processRefund(order);
         }
         order.setStatus(Status.CANCELLED);
         return toClientOrderResponse(orderRepository.save(order));
@@ -160,6 +165,11 @@ public class OrderService {
         if(newStatus.equals(Status.COMPLETED)){
             throw new IllegalArgumentException("Caminho inválido para encerramento do pedido");
         }
+
+        if(newStatus.equals(Status.CANCELLED)){
+            processRefund(order);
+            //Lógica de estorno de pagamento aqui
+        }
         order.setStatus(newStatus);
         return toCafeteriaOrderResponse(orderRepository.save(order));
     }
@@ -185,6 +195,14 @@ public class OrderService {
 
         order.setStatus(Status.COMPLETED);
         return toCafeteriaOrderResponse(orderRepository.save(order));
+    }
+
+    private void processRefund(Order order){
+        List<OrderItemRequest> requests = new ArrayList<>();
+        for(OrderItem orderItem: order.getItems()){
+            requests.add(new OrderItemRequest(orderItem.getItemName(), orderItem.getQuantity()));
+        }
+        coreService.incrementsStock(order.getCafeteriaId(), requests);
     }
 
     private ClientOrderResponse toClientOrderResponse(Order order){
