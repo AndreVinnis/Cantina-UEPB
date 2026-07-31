@@ -30,6 +30,11 @@ public class OrderController {
         return ResponseEntity.ok().body(orderService.cancelOrder(id));
     }
 
+    @GetMapping("/public/{cpf}/orders")
+    public ResponseEntity<List<ClientOrderResponse>> getOrderByCpf(@PathVariable String cpf){
+        return ResponseEntity.ok().body(orderService.getOrderByCpf(cpf));
+    }
+
     @GetMapping("/merchant/open-orders")
     public ResponseEntity<List<CafeteriaOrderResponse>> getOpenOrders(){
         return ResponseEntity.ok().body(orderService.getOpenOrders());
