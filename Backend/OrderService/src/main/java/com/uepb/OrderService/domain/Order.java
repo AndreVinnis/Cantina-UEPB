@@ -35,6 +35,9 @@ public class Order {
     @Column(nullable = false, length = 100)
     private String clientName;
 
+    @Column(nullable = false, length = 11)
+    private String clientCpf;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();

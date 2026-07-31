@@ -44,12 +44,14 @@ public class OrderService {
             Status.READY
     );
 
+    // PUBLIC METHODS
     @Transactional
     public ClientOrderResponse create(OrderRequest orderRequest){
         List<ItemValidatedResponse> validatedItems = coreService.validateOrderItems(orderRequest.cafeteriaId(), orderRequest.items());
         Order order = new Order();
         order.setCafeteriaId(orderRequest.cafeteriaId());
         order.setCafeteriaName(orderRequest.cafeteriaName());
+        order.setClientCpf(orderRequest.clientCpf());
         order.setClientName(orderRequest.clientName());
         order.setPaymentMethod(orderRequest.paymentMethod());
         order = orderRepository.save(order);
@@ -77,6 +79,39 @@ public class OrderService {
         return toClientOrderResponse(order);
     }
 
+    @Transactional
+    public List<ClientOrderResponse> getOrderByCpf(String cpf){
+        List<Order> orders = orderRepository.findByClientCpf(cpf);
+        if(orders.isEmpty()){
+            throw new NoOrdersYet();
+        }
+
+        List<ClientOrderResponse> orderResponses = new ArrayList<>();
+        for (Order order: orders){
+            orderResponses.add(toClientOrderResponse(order));
+        }
+        return orderResponses;
+    }
+
+    @Transactional
+    public ClientOrderResponse cancelOrder(String id){
+        List<Status> ableChangeStatus = List.of(
+                Status.PENDING,
+                Status.AWANTING_PAYMENT,
+                Status.CONFIRMED
+        );
+        Order order = orderRepository.findById(id).orElseThrow(
+                () -> new OrderNotFound(id)
+        );
+
+        if(!ableChangeStatus.contains(order.getStatus())){
+            throw new InvalidStatus(order.getStatus(), Status.CANCELLED);
+        }
+        order.setStatus(Status.CANCELLED);
+        return toClientOrderResponse(orderRepository.save(order));
+    }
+
+    // MERCHANT METHODS
     @Transactional
     public List<CafeteriaOrderResponse> getOpenOrders(){
         String cafeteriaId = coreService.getIdCafeteria();
@@ -150,24 +185,6 @@ public class OrderService {
 
         order.setStatus(Status.COMPLETED);
         return toCafeteriaOrderResponse(orderRepository.save(order));
-    }
-
-    @Transactional
-    public ClientOrderResponse cancelOrder(String id){
-        List<Status> ableChangeStatus = List.of(
-                Status.PENDING,
-                Status.AWANTING_PAYMENT,
-                Status.CONFIRMED
-        );
-        Order order = orderRepository.findById(id).orElseThrow(
-                () -> new OrderNotFound(id)
-        );
-
-        if(!ableChangeStatus.contains(order.getStatus())){
-            throw new InvalidStatus(order.getStatus(), Status.CANCELLED);
-        }
-        order.setStatus(Status.CANCELLED);
-        return toClientOrderResponse(orderRepository.save(order));
     }
 
     private ClientOrderResponse toClientOrderResponse(Order order){

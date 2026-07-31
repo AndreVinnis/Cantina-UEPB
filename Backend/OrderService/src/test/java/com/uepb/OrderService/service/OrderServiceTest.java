@@ -53,6 +53,7 @@ class OrderServiceTest {
 
     private OrderRequest orderRequest;
     private final String CAFETERIA_ID = "cafeteria-id-123";
+    private final String CLIENT_CPF = "12345678900";
 
     @BeforeEach
     void setup() {
@@ -60,8 +61,10 @@ class OrderServiceTest {
                 new OrderItemRequest("Café Expresso", 2),
                 new OrderItemRequest("Pão de Queijo", 1)
         );
+
         orderRequest = new OrderRequest(
                 "Andre Vinicius",
+                CLIENT_CPF,
                 "qualquerId",
                 "Cafeteria Central",
                 itemRequests,
@@ -107,6 +110,35 @@ class OrderServiceTest {
         assertEquals("Item indisponível ou inválido", exception.getMessage());
         verify(orderRepository, never()).save(any(Order.class));
         verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("Deve retornar os pedidos de um cliente buscando pelo CPF com sucesso")
+    void shouldReturnOrdersByCpfSuccessfully() {
+        // Arrange
+        Order order = createMockOrder("1", Status.PENDING);
+        when(orderRepository.findByClientCpf(CLIENT_CPF)).thenReturn(List.of(order));
+
+        // Act
+        List<ClientOrderResponse> responses = orderService.getOrderByCpf(CLIENT_CPF);
+
+        // Assert
+        assertNotNull(responses);
+        assertEquals(1, responses.size());
+        assertEquals(order.getCafeteriaName(), responses.getFirst().cafeteriaName());
+        assertEquals(order.getStatus(), responses.getFirst().status());
+        verify(orderRepository, times(1)).findByClientCpf(CLIENT_CPF);
+    }
+
+    @Test
+    @DisplayName("Deve lançar NoOrdersYet ao buscar pedidos por CPF quando a lista estiver vazia")
+    void shouldThrowNoOrdersYetWhenGetOrderByCpfIsEmpty() {
+        // Arrange
+        when(orderRepository.findByClientCpf(CLIENT_CPF)).thenReturn(new ArrayList<>());
+
+        // Act & Assert
+        assertThrows(NoOrdersYet.class, () -> orderService.getOrderByCpf(CLIENT_CPF));
+        verify(orderRepository, times(1)).findByClientCpf(CLIENT_CPF);
     }
 
     @Test
@@ -254,7 +286,7 @@ class OrderServiceTest {
         when(orderRepository.save(any(Order.class))).then(AdditionalAnswers.returnsFirstArg());
 
         // Act
-        CafeteriaOrderResponse response = orderService.closeOrder("1", "1234"); // mock possui sessionToken final 1234
+        CafeteriaOrderResponse response = orderService.closeOrder("1", "1234");
 
         // Assert
         assertEquals(Status.COMPLETED, response.status());
@@ -300,10 +332,12 @@ class OrderServiceTest {
         assertThrows(InvalidStatus.class, () -> orderService.cancelOrder("1"));
     }
 
+    // Método utilitário para criar pedidos falsos populados para testes de mapeamento
     private Order createMockOrder(String id, Status status) {
         Order order = new Order();
         order.setId(id);
         order.setClientName("Cliente Teste");
+        order.setClientCpf(CLIENT_CPF); // NOVO
         order.setCafeteriaId(CAFETERIA_ID);
         order.setCafeteriaName("Cafeteria Central");
         order.setPaymentMethod(PaymentMethod.PIX);
