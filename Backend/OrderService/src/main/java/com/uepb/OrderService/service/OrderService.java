@@ -4,20 +4,18 @@ import com.uepb.OrderService.domain.Order;
 import com.uepb.OrderService.domain.OrderItem;
 import com.uepb.OrderService.dto.events.OrderCreatedEvent;
 import com.uepb.OrderService.dto.request.OrderRequest;
+import com.uepb.OrderService.dto.response.CafeteriaOrderResponse;
 import com.uepb.OrderService.dto.response.ClientOrderResponse;
 import com.uepb.OrderService.dto.response.OrderItemResponse;
-import com.uepb.OrderService.enums.PaymentMethod;
 import com.uepb.OrderService.enums.Status;
+import com.uepb.OrderService.exception.NoOrdersYet;
 import com.uepb.OrderService.integration.CoreService;
 import com.uepb.OrderService.integration.ItemValidatedResponse;
-import com.uepb.OrderService.repository.OrderItemRepository;
 import com.uepb.OrderService.repository.OrderRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +65,45 @@ public class OrderService {
         return toClientOrderResponse(order);
     }
 
+    @Transactional
+    public List<CafeteriaOrderResponse> getOpenOrders(){
+        List<Status> openStatus = List.of(
+                Status.PENDING,
+                Status.CONFIRMED,
+                Status.IN_PROGRESS,
+                Status.READY
+        );
+
+        String cafeteriaId = coreService.getIdCafeteria();
+        List<Order> orders = orderRepository.findByCafeteriaId(cafeteriaId);
+        if(orders.isEmpty()){
+            throw new NoOrdersYet();
+        }
+
+        List<CafeteriaOrderResponse> orderResponses = new ArrayList<>();
+        for (Order order: orders){
+            if(openStatus.contains(order.getStatus())){
+                orderResponses.add(toCafeteriaOrderResponse(order));
+            }
+        }
+        return orderResponses;
+    }
+
+    @Transactional
+    public List<CafeteriaOrderResponse> getAllOrders(){
+        String cafeteriaId = coreService.getIdCafeteria();
+        List<Order> orders = orderRepository.findByCafeteriaId(cafeteriaId);
+        if(orders.isEmpty()){
+            throw new NoOrdersYet();
+        }
+
+        List<CafeteriaOrderResponse> orderResponses = new ArrayList<>();
+        for (Order order: orders){
+            orderResponses.add(toCafeteriaOrderResponse(order));
+        }
+        return orderResponses;
+    }
+
     private ClientOrderResponse toClientOrderResponse(Order order){
         List<OrderItemResponse> itemResponses = new ArrayList<>();
         for(OrderItem item: order.getItems()){
@@ -81,6 +118,28 @@ public class OrderService {
         return new ClientOrderResponse(
                 order.getSessionToken(),
                 order.getCafeteriaName(),
+                itemResponses,
+                order.getTotalPrice(),
+                order.getPaymentMethod(),
+                order.getStatus(),
+                order.getCreatedAt()
+        );
+    }
+
+    private CafeteriaOrderResponse toCafeteriaOrderResponse(Order order){
+        List<OrderItemResponse> itemResponses = new ArrayList<>();
+        for(OrderItem item: order.getItems()){
+            OrderItemResponse orderItemResponse = new OrderItemResponse(
+                    item.getItemName(),
+                    item.getQuantity(),
+                    item.getUniquePrice(),
+                    item.getUniquePrice().multiply(BigDecimal.valueOf(item.getQuantity()))
+            );
+            itemResponses.add(orderItemResponse);
+        }
+        return new CafeteriaOrderResponse(
+                order.getId(),
+                order.getClientName(),
                 itemResponses,
                 order.getTotalPrice(),
                 order.getPaymentMethod(),
