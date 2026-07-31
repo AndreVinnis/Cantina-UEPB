@@ -25,9 +25,9 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(orderRequest));
     }
 
-    @PatchMapping("/public/{id}/cancel-order")
-    public ResponseEntity<ClientOrderResponse> cancelOrder(@PathVariable String id){
-        return ResponseEntity.ok().body(orderService.cancelOrder(id));
+    @PatchMapping("/public/{sessionToken}/cancel-order")
+    public ResponseEntity<ClientOrderResponse> cancelOrder(@PathVariable String sessionToken){
+        return ResponseEntity.ok().body(orderService.cancelOrder(sessionToken));
     }
 
     @GetMapping("/public/{cpf}/orders")

@@ -35,7 +35,24 @@ public class CoreServiceFallbackFactory implements FallbackFactory<CoreService> 
             }
 
             @Override
-            public Void decrementsStock(String id, List<OrderItemRequest> orderRequest) {
+            public void decrementsStock(String id, List<OrderItemRequest> orderRequest) {
+                Throwable rootCause = cause.getCause() != null ? cause.getCause() : cause;
+
+                if (rootCause instanceof TimeoutException || rootCause.getMessage().toLowerCase().contains("timeout")) {
+                    throw new ServiceTimeOutException("Core Service");
+                }
+
+                if (cause instanceof FeignException feignEx) {
+                    if (feignEx.status() == 400) {
+                        throw new RuntimeException("Ocorreu um erro no serviço Core. " + feignEx.getMessage());
+                    }
+                }
+
+                throw new RuntimeException("Erro de comunicação com o CoreService", cause);
+            }
+
+            @Override
+            public void incrementsStock(String id, List<OrderItemRequest> orderRequest) {
                 Throwable rootCause = cause.getCause() != null ? cause.getCause() : cause;
 
                 if (rootCause instanceof TimeoutException || rootCause.getMessage().toLowerCase().contains("timeout")) {
