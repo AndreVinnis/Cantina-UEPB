@@ -100,6 +100,15 @@ public class CafeteriaController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/internal/{id}/items/increments")
+    public ResponseEntity<Void> incrementsStock(
+            @PathVariable String id,
+            @RequestBody @Valid List<OrderItemRequest> orderRequest
+    ){
+        cafeteriaService.incrementsStock(id, orderRequest);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("internal/id")
     public ResponseEntity<String> getIdCafeteria(@AuthenticationPrincipal UserDetails userDetails){
         return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()).id());
