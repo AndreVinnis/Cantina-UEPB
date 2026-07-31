@@ -99,4 +99,9 @@ public class CafeteriaController {
         cafeteriaService.decrementsStock(id, orderRequest);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("internal/id")
+    public ResponseEntity<String> getIdCafeteria(@AuthenticationPrincipal UserDetails userDetails){
+        return ResponseEntity.ok(cafeteriaService.getMyCafeteria(userDetails.getUsername()).id());
+    }
 }
