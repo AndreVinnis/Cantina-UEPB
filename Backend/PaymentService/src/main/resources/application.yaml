@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: PaymentService
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 5MB
+    cloud:
+      openfeign:
+        circuitbreaker:
+          enabled: true
+
+resilience4j:
+  timelimiter:
+    instances:
+      CoreService:
+        timeoutDuration: 3s
+
+  circuitbreaker:
+    instances:
+      CoreService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
