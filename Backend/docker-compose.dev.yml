@@ -4,6 +4,7 @@ include:
   - EurekaServer/docker-compose.yml
   - CoreService/docker-compose.dev.yml
   - OrderService/docker-compose.dev.yml
+  - PaymentService/docker-compose.dev.yml
 
 networks:
   rede-microsservicos:
