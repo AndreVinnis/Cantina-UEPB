@@ -1,6 +1,8 @@
 spring:
   application:
     name: PaymentService
+  profiles:
+    active: dev
 
   servlet:
     multipart:
@@ -31,3 +33,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+
+abacatepay:
+  api:
+    key: abc_dev_ZA4JfeGuE4GqmteZftgGu4aB
+  webhook:
+    secret: ausdaitdiagdsçiagsdiagsdag

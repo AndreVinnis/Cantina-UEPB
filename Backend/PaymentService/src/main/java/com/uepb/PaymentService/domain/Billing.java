@@ -1,19 +1,19 @@
 package com.uepb.PaymentService.domain;
 
-import com.uepb.PaymentService.enums.Status;
+import com.uepb.PaymentService.enums.BillingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
-@Table(name = "purchases")
+@Table(name = "billing")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Purchase {
+public class Billing {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,11 +25,15 @@ public class Purchase {
     @Column(nullable = false)
     private String cafeteriaId;
 
+    @Column(nullable = false)
     private BigDecimal amount;
+
+    @Column(nullable = false, length = 150)
+    private String clientName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
+    private BillingStatus status;
 
     @Column(nullable = false)
     private String abacatePayId;
